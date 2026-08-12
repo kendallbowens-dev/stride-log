@@ -1,7 +1,7 @@
 "use server"
 
 import { db } from "@/lib/db"
-import { activities, settings, stravaConnection } from "@/lib/db/schema"
+import { activities, settings, settingsBackup, stravaConnection } from "@/lib/db/schema"
 import { OWNER_ID } from "@/lib/owner"
 import { getRedirectUri, stravaConfigured, syncStravaActivities } from "@/lib/strava"
 import type { StravaStatus } from "@/lib/types"
@@ -41,6 +41,15 @@ export async function syncStrava() {
 }
 
 export async function disconnectStrava() {
+  const currentSettings = await db.select().from(settings).where(eq(settings.ownerId, OWNER_ID)).limit(1)
+  if (currentSettings[0]) {
+    const { ownerId, ...rest } = currentSettings[0]
+    await db
+      .insert(settingsBackup)
+      .values(currentSettings[0])
+      .onConflictDoUpdate({ target: settingsBackup.ownerId, set: rest })
+  }
+
   await db.delete(stravaConnection).where(eq(stravaConnection.ownerId, OWNER_ID))
   await db.delete(activities).where(and(eq(activities.ownerId, OWNER_ID), eq(activities.source, "strava")))
   await db.delete(settings).where(eq(settings.ownerId, OWNER_ID))
