@@ -20,22 +20,19 @@ export async function getOrigin(): Promise<string> {
 }
 
 /**
- * The redirect_uri sent to Strava. If STRAVA_REDIRECT_URI is set it wins, so the
- * value always matches the callback registered in the Strava app settings. A bare
- * domain (no path) is accepted and the callback path is appended for convenience.
- * Otherwise it is derived from the current request origin.
+ * The redirect_uri sent to Strava, always derived from the host the app is
+ * actually loaded on. This guarantees the redirect returns to this deployment
+ * and that its domain is the one you register in Strava's settings.
+ *
+ * We intentionally do NOT read STRAVA_REDIRECT_URI: a wrong value there (e.g.
+ * pointing at strava.com) silently produces an invalid redirect_uri. Deriving
+ * from the live request host removes that failure mode entirely.
  */
 export async function getRedirectUri(): Promise<string> {
-  const configured = process.env.STRAVA_REDIRECT_URI?.trim()
-  if (configured) {
-    const withProtocol = /^https?:\/\//.test(configured) ? configured : `https://${configured}`
-    // If they only provided an origin/domain, append the callback path.
-    return /\/api\/strava\/callback\/?$/.test(withProtocol)
-      ? withProtocol.replace(/\/$/, "")
-      : `${withProtocol.replace(/\/$/, "")}/api/strava/callback`
-  }
-  const origin = await getOrigin()
-  return `${origin}/api/strava/callback`
+  const h = await headers()
+  const host = h.get("x-forwarded-host") ?? h.get("host")
+  const proto = h.get("x-forwarded-proto") ?? (host?.startsWith("localhost") ? "http" : "https")
+  return `${proto}://${host}/api/strava/callback`
 }
 
 export async function buildAuthorizeUrl(): Promise<string> {

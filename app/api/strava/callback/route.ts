@@ -1,8 +1,9 @@
-import { exchangeCodeForToken, getOrigin, storeConnection, syncStravaActivities } from "@/lib/strava"
+import { exchangeCodeForToken, storeConnection, syncStravaActivities } from "@/lib/strava"
 import { NextResponse, type NextRequest } from "next/server"
 
 export async function GET(request: NextRequest) {
-  const origin = await getOrigin()
+  // Return to the same host the callback arrived on, so the flow stays on one domain.
+  const origin = request.nextUrl.origin
   const code = request.nextUrl.searchParams.get("code")
   const error = request.nextUrl.searchParams.get("error")
 
