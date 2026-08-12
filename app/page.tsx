@@ -18,7 +18,7 @@ import { Activity } from "lucide-react"
 export const dynamic = "force-dynamic"
 
 export default async function DashboardPage() {
-  const [{ weeks, activityCount }, strava, notion, latestLog, settingsRows] = await Promise.all([
+  const [{ weeks, activityCount, hasRealData }, strava, notion, latestLog, settingsRows] = await Promise.all([
     getAnalysis(),
     getStravaStatus(),
     getNotionStatus(),
@@ -38,7 +38,9 @@ export default async function DashboardPage() {
     : null
 
   const currentWeek = weeks[weeks.length - 1] ?? null
-  const hasData = activityCount > 0 && currentWeek
+  // Only populate the dashboard from real, connected data (Strava / imported runs).
+  // Sample-only data does not drive the summary, charts, or log.
+  const hasData = hasRealData && currentWeek
 
   return (
     <main className="mx-auto flex min-h-svh w-full max-w-5xl flex-col gap-6 px-4 py-8 md:px-6 md:py-10">
@@ -74,8 +76,8 @@ export default async function DashboardPage() {
         <div className="rounded-xl border border-dashed border-border bg-card/40 p-8 text-center">
           <h2 className="text-lg font-medium">No training data yet</h2>
           <p className="mx-auto mt-1 max-w-md text-pretty text-sm text-muted-foreground">
-            Connect Strava, import a CSV of your runs, or load sample data below to see your weekly load analysis and
-            cut-back / ramp-up flags.
+            Connect your Strava account or import a CSV of your runs below to see your weekly load analysis and cut-back
+            / ramp-up flags.
           </p>
         </div>
       )}

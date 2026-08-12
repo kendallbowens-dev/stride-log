@@ -99,43 +99,10 @@ export function DataControls({ strava, activityCount }: { strava: StravaStatus; 
               </div>
             </div>
           ) : (
-            <div className="flex flex-col gap-3">
-              <a href="/api/strava/authorize" className={cn(buttonVariants({ size: "sm" }), "w-fit")}>
-                <Activity className="size-4" />
-                Connect Strava
-              </a>
-              <div className="rounded-md border border-border bg-muted/40 p-3 text-xs">
-                <p className="mb-2 font-medium text-foreground">Getting a 400 / redirect_uri invalid?</p>
-                <p className="text-muted-foreground text-pretty">
-                  In your{" "}
-                  <a
-                    href="https://www.strava.com/settings/api"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-primary underline underline-offset-2"
-                  >
-                    Strava API settings
-                  </a>
-                  , set <span className="font-medium text-foreground">Authorization Callback Domain</span> to exactly
-                  this (bare domain, no https, no path):
-                </p>
-                <button
-                  type="button"
-                  onClick={() => {
-                    navigator.clipboard?.writeText(strava.callbackDomain)
-                    toast.success("Callback domain copied")
-                  }}
-                  className="mt-2 block w-full truncate rounded bg-background px-2 py-1.5 text-left font-mono text-foreground ring-1 ring-border hover:ring-primary"
-                  title="Click to copy"
-                >
-                  {strava.callbackDomain}
-                </button>
-                <p className="mt-2 text-muted-foreground">
-                  Full redirect the app sends: <span className="break-all font-mono">{strava.redirectUri}</span>. Start
-                  the connect flow from this same domain.
-                </p>
-              </div>
-            </div>
+            <a href="/api/strava/authorize" className={cn(buttonVariants({ size: "sm" }), "w-fit")}>
+              <Activity className="size-4" />
+              Connect Strava
+            </a>
           )}
         </div>
 

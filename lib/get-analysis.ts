@@ -9,6 +9,8 @@ import { asc, eq } from "drizzle-orm"
 export interface Analysis {
   weeks: WeekStats[]
   activityCount: number
+  /** True when at least one non-sample run (Strava / CSV) is present. */
+  hasRealData: boolean
   baseline: TrainingBaseline
 }
 
@@ -39,5 +41,5 @@ export async function getAnalysis(): Promise<Analysis> {
   }))
 
   const weeks = computeWeeklyStats(input, baseline)
-  return { weeks, activityCount: activeRows.length, baseline }
+  return { weeks, activityCount: activeRows.length, hasRealData: realRows.length > 0, baseline }
 }
