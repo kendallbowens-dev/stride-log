@@ -1,7 +1,7 @@
 import "server-only"
 
 import { db } from "@/lib/db"
-import { activities, stravaConnection, type NewActivity } from "@/lib/db/schema"
+import { activities, settings, settingsBackup, stravaConnection, type NewActivity } from "@/lib/db/schema"
 import { OWNER_ID } from "@/lib/owner"
 import { eq } from "drizzle-orm"
 import { headers } from "next/headers"
@@ -84,6 +84,23 @@ export async function storeConnection(token: TokenResponse) {
         expiresAt: values.expiresAt,
       },
     })
+
+  await restoreSettingsBackup()
+}
+
+/**
+ * Restores the health baseline snapshotted at disconnect time (see
+ * `disconnectStrava`), if one exists, so reconnecting the same account
+ * brings the baseline back instead of leaving it empty.
+ */
+async function restoreSettingsBackup() {
+  const rows = await db.select().from(settingsBackup).where(eq(settingsBackup.ownerId, OWNER_ID)).limit(1)
+  const backup = rows[0]
+  if (!backup) return
+
+  const { ownerId, ...rest } = backup
+  await db.insert(settings).values(backup).onConflictDoUpdate({ target: settings.ownerId, set: rest })
+  await db.delete(settingsBackup).where(eq(settingsBackup.ownerId, OWNER_ID))
 }
 
 async function getValidAccessToken(): Promise<string | null> {
