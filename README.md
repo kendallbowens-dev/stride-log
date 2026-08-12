@@ -33,15 +33,7 @@ All of the actual load/pace math lives in [`lib/training/algorithm.ts`](lib/trai
 pnpm install
 ```
 
-### 2. Set up the database
-
-Provision a Neon Postgres database and push the schema (defined in [`lib/db/schema.ts`](lib/db/schema.ts)):
-
-```bash
-npx drizzle-kit push
-```
-
-### 3. Configure environment variables
+### 2. Configure environment variables
 
 Create a `.env.local` with:
 
@@ -55,7 +47,7 @@ Notion is connected per-user at runtime through Vercel Connect (no static API ke
 
 Without a Strava app configured, you can still explore the dashboard by importing a CSV or loading sample data.
 
-### 4. Run the dev server
+### 3. Run the dev server
 
 ```bash
 pnpm dev
