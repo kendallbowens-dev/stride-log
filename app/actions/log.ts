@@ -6,6 +6,7 @@ import { getAnalysis } from "@/lib/get-analysis"
 import { OWNER_ID } from "@/lib/owner"
 import type { WeekStats } from "@/lib/training/algorithm"
 import { directionLabel, formatPace } from "@/lib/format"
+import { buildRunningLog } from "@/lib/log-builder"
 import { generateText } from "ai"
 import { desc, eq } from "drizzle-orm"
 import { revalidatePath } from "next/cache"
@@ -76,13 +77,24 @@ export async function generateRunningLog() {
     .filter(Boolean)
     .join("\n\n")
 
-  let markdown: string
+  // The deterministic builder is the source of truth and the guaranteed fallback.
+  const fallbackMarkdown = buildRunningLog(weeks, baseline)
+
+  let markdown = fallbackMarkdown
+  let source: "ai" | "algorithm" = "algorithm"
+  let notice: string | undefined
   try {
     const { text } = await generateText({ model: MODEL, system, prompt })
-    markdown = text
+    if (text.trim()) {
+      markdown = text
+      source = "ai"
+    }
   } catch (err) {
-    console.log("[v0] log generation error:", err instanceof Error ? err.message : String(err))
-    return { ok: false as const, error: "The AI agent could not generate the log. Please try again." }
+    const message = err instanceof Error ? err.message : String(err)
+    console.log("[v0] AI narration unavailable, using algorithm-generated log:", message)
+    notice = /credit card|quota|billing|402|403/i.test(message)
+      ? "AI narration is unavailable (AI Gateway needs billing enabled), so this log was generated directly from the training algorithm."
+      : "AI narration was unavailable, so this log was generated directly from the training algorithm."
   }
 
   const summary = {
@@ -91,6 +103,7 @@ export async function generateRunningLog() {
     latestAcwr: current.acwr,
     mileageDirection: current.mileageFlag.direction,
     paceDirection: current.paceFlag.direction,
+    source,
   }
 
   const weekStart = current.weekStart
@@ -108,7 +121,7 @@ export async function generateRunningLog() {
     })
 
   revalidatePath("/")
-  return { ok: true as const, markdown, weekStart }
+  return { ok: true as const, markdown, weekStart, source, notice }
 }
 
 export async function getLatestLog() {

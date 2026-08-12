@@ -18,6 +18,7 @@ interface LogPanelProps {
 export function LogPanel({ initialMarkdown, initialSyncedAt, notionConnected, hasActivities }: LogPanelProps) {
   const [markdown, setMarkdown] = useState(initialMarkdown)
   const [syncedAt, setSyncedAt] = useState(initialSyncedAt)
+  const [notice, setNotice] = useState<string | null>(null)
   const [isGenerating, startGenerate] = useTransition()
   const [isSyncing, startSync] = useTransition()
 
@@ -27,7 +28,8 @@ export function LogPanel({ initialMarkdown, initialSyncedAt, notionConnected, ha
       if (res.ok) {
         setMarkdown(res.markdown)
         setSyncedAt(null)
-        toast.success("Running log generated")
+        setNotice(res.notice ?? null)
+        toast.success(res.source === "ai" ? "Running log generated" : "Running log generated from training data")
       } else {
         toast.error(res.error)
       }
@@ -81,6 +83,11 @@ export function LogPanel({ initialMarkdown, initialSyncedAt, notionConnected, ha
       <CardContent>
         {markdown ? (
           <>
+            {notice ? (
+              <p className="mb-4 rounded-md border border-warning/30 bg-warning/10 px-3 py-2 text-xs text-warning">
+                {notice}
+              </p>
+            ) : null}
             <Separator className="mb-4" />
             <article className="prose-log max-w-none">
               <ReactMarkdown>{markdown}</ReactMarkdown>
