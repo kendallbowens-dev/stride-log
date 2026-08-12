@@ -2,32 +2,16 @@
 
 import { clearActivities, importActivities, seedSampleData } from "@/app/actions/activities"
 import { disconnectStrava, syncStrava } from "@/app/actions/strava"
-import { Button } from "@/components/ui/button"
+import { Button, buttonVariants } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
+import { parseCsv } from "@/lib/csv"
+import type { StravaStatus } from "@/lib/types"
+import { cn } from "@/lib/utils"
 import { Activity, Database, RefreshCw, Trash2, Upload } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useRef, useState, useTransition } from "react"
 import { toast } from "sonner"
-
-interface StravaStatus {
-  configured: boolean
-  connected: boolean
-  athleteName: string | null
-  lastSyncAt: string | null
-}
-
-function parseCsv(text: string): Record<string, string>[] {
-  const lines = text.trim().split(/\r?\n/)
-  if (lines.length < 2) return []
-  const headers = lines[0].split(",").map((h) => h.trim())
-  return lines.slice(1).map((line) => {
-    const cells = line.split(",")
-    const row: Record<string, string> = {}
-    headers.forEach((h, i) => (row[h] = (cells[i] ?? "").trim()))
-    return row
-  })
-}
 
 export function DataControls({ strava, activityCount }: { strava: StravaStatus; activityCount: number }) {
   const router = useRouter()
@@ -115,12 +99,10 @@ export function DataControls({ strava, activityCount }: { strava: StravaStatus; 
               </div>
             </div>
           ) : (
-            <Button size="sm" className="w-fit" asChild>
-              <a href="/api/strava/authorize">
-                <Activity className="size-4" />
-                Connect Strava
-              </a>
-            </Button>
+            <a href="/api/strava/authorize" className={cn(buttonVariants({ size: "sm" }), "w-fit")}>
+              <Activity className="size-4" />
+              Connect Strava
+            </a>
           )}
         </div>
 

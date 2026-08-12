@@ -4,10 +4,11 @@ import { db } from "@/lib/db"
 import { stravaConnection } from "@/lib/db/schema"
 import { OWNER_ID } from "@/lib/owner"
 import { stravaConfigured, syncStravaActivities } from "@/lib/strava"
+import type { StravaStatus } from "@/lib/types"
 import { eq } from "drizzle-orm"
 import { revalidatePath } from "next/cache"
 
-export async function getStravaStatus() {
+export async function getStravaStatus(): Promise<StravaStatus> {
   const configured = stravaConfigured()
   const rows = await db.select().from(stravaConnection).where(eq(stravaConnection.ownerId, OWNER_ID)).limit(1)
   const conn = rows[0]

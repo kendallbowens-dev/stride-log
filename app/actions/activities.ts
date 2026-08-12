@@ -4,6 +4,7 @@ import { db } from "@/lib/db"
 import { activities, type NewActivity } from "@/lib/db/schema"
 import { OWNER_ID } from "@/lib/owner"
 import { generateSampleActivities } from "@/lib/sample-data"
+import { milesToMeters } from "@/lib/units"
 import { and, desc, eq } from "drizzle-orm"
 import { revalidatePath } from "next/cache"
 
@@ -34,7 +35,6 @@ export async function clearActivities() {
  * date, distance_mi (or distance_km / distance_m), duration (mm:ss or seconds), avg_hr?, name?
  * A bare "distance" column is interpreted as miles.
  */
-const METERS_PER_MILE = 1609.344
 export async function importActivities(rows: Record<string, string>[]) {
   const toInsert: NewActivity[] = []
   let skipped = 0
@@ -54,10 +54,10 @@ export async function importActivities(rows: Record<string, string>[]) {
 
     let distanceM: number | null = null
     if (row["distance_m"]) distanceM = Number(row["distance_m"])
-    else if (row["distance_mi"]) distanceM = Number(row["distance_mi"]) * METERS_PER_MILE
-    else if (row["distance_miles"]) distanceM = Number(row["distance_miles"]) * METERS_PER_MILE
+    else if (row["distance_mi"]) distanceM = milesToMeters(Number(row["distance_mi"]))
+    else if (row["distance_miles"]) distanceM = milesToMeters(Number(row["distance_miles"]))
     else if (row["distance_km"]) distanceM = Number(row["distance_km"]) * 1000
-    else if (row["distance"]) distanceM = Number(row["distance"]) * METERS_PER_MILE
+    else if (row["distance"]) distanceM = milesToMeters(Number(row["distance"]))
     if (!distanceM || isNaN(distanceM) || distanceM <= 0) {
       skipped++
       continue

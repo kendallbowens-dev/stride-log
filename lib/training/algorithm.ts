@@ -13,11 +13,7 @@
  *      heart-rate cost of a given pace (aerobic decoupling proxy).
  */
 
-export const METERS_PER_MILE = 1609.344
-
-export function metersToMiles(m: number): number {
-  return m / METERS_PER_MILE
-}
+import { metersToMiles } from "@/lib/units"
 
 export type FlagDirection = "rampup" | "cutback" | "hold"
 export type FlagSeverity = "low" | "moderate" | "high"
@@ -340,15 +336,3 @@ function flagPace(
   }
 }
 
-// ---------- formatting helpers (shared by UI + agent) ----------
-
-export function formatPace(secPerMile: number | null): string {
-  if (!secPerMile) return "—"
-  const min = Math.floor(secPerMile / 60)
-  const sec = Math.round(secPerMile % 60)
-  return `${min}:${sec.toString().padStart(2, "0")}/mi`
-}
-
-export function directionLabel(d: FlagDirection): string {
-  return d === "rampup" ? "Ramp up" : d === "cutback" ? "Cut back" : "Hold"
-}

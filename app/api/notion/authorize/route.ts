@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { startNotionAuthorization } from "@/lib/notion"
+import { startNotionAuthorization } from "@/lib/notion/client"
 
 export async function GET(request: Request) {
   const origin = new URL(request.url).origin

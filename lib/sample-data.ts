@@ -1,6 +1,6 @@
 import type { NewActivity } from "@/lib/db/schema"
 import { OWNER_ID } from "@/lib/owner"
-import { METERS_PER_MILE } from "@/lib/training/algorithm"
+import { milesToMeters } from "@/lib/units"
 
 /**
  * Generates a realistic ~14-week marathon-style build for demo/testing:
@@ -64,7 +64,7 @@ export function generateSampleActivities(): NewActivity[] {
         source: "sample",
         name: r === 3 ? "Long run" : r === 1 ? "Tempo / quality" : "Easy run",
         startDate: start,
-        distanceM: Math.round(mi * METERS_PER_MILE),
+        distanceM: Math.round(milesToMeters(mi)),
         movingTimeS,
         avgHr: hr,
         totalElevationM: Math.round(mi * 10),

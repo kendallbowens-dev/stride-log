@@ -1,6 +1,7 @@
 import { FlagBadge, severityDot } from "@/components/flag-badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { formatPace, type WeekStats } from "@/lib/training/algorithm"
+import type { WeekStats } from "@/lib/training/algorithm"
+import { formatPace } from "@/lib/format"
 import { cn } from "@/lib/utils"
 
 function Metric({ label, value, sub }: { label: string; value: string; sub?: string }) {

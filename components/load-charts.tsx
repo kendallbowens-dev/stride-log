@@ -2,7 +2,8 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { ChartContainer, ChartTooltip } from "@/components/ui/chart"
-import { formatPace, type WeekStats } from "@/lib/training/algorithm"
+import type { WeekStats } from "@/lib/training/algorithm"
+import { formatPace } from "@/lib/format"
 import {
   Bar,
   BarChart,

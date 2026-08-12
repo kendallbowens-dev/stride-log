@@ -4,12 +4,14 @@ import { db } from "@/lib/db"
 import { logEntries } from "@/lib/db/schema"
 import { getAnalysis } from "@/lib/get-analysis"
 import { OWNER_ID } from "@/lib/owner"
-import { directionLabel, formatPace, type WeekStats } from "@/lib/training/algorithm"
+import type { WeekStats } from "@/lib/training/algorithm"
+import { directionLabel, formatPace } from "@/lib/format"
 import { generateText } from "ai"
 import { desc, eq } from "drizzle-orm"
 import { revalidatePath } from "next/cache"
-import { getNotionClient, isNotionConnected } from "@/lib/notion"
-import { writeLogToNotion } from "@/lib/notion-writer"
+import { getNotionClient, isNotionConnected } from "@/lib/notion/client"
+import { writeLogToNotion } from "@/lib/notion/writer"
+import type { NotionStatus } from "@/lib/types"
 
 const MODEL = "openai/gpt-5.2"
 
@@ -119,7 +121,7 @@ export async function getLatestLog() {
   return rows[0] ?? null
 }
 
-export async function getNotionStatus() {
+export async function getNotionStatus(): Promise<NotionStatus> {
   const connected = await isNotionConnected()
   return { connected }
 }
