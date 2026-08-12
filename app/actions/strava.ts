@@ -1,11 +1,11 @@
 "use server"
 
 import { db } from "@/lib/db"
-import { stravaConnection } from "@/lib/db/schema"
+import { activities, stravaConnection } from "@/lib/db/schema"
 import { OWNER_ID } from "@/lib/owner"
 import { getRedirectUri, stravaConfigured, syncStravaActivities } from "@/lib/strava"
 import type { StravaStatus } from "@/lib/types"
-import { eq } from "drizzle-orm"
+import { and, eq } from "drizzle-orm"
 import { revalidatePath } from "next/cache"
 
 export async function getStravaStatus(): Promise<StravaStatus> {
@@ -41,7 +41,11 @@ export async function syncStrava() {
 }
 
 export async function disconnectStrava() {
+  // Remove the connection AND the runs it synced, so the dashboard stops showing
+  // stale Strava data once the account is disconnected. CSV-imported runs are left
+  // intact since they aren't tied to the Strava account.
   await db.delete(stravaConnection).where(eq(stravaConnection.ownerId, OWNER_ID))
+  await db.delete(activities).where(and(eq(activities.ownerId, OWNER_ID), eq(activities.source, "strava")))
   revalidatePath("/")
   return { ok: true as const }
 }
