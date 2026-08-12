@@ -25,7 +25,12 @@ export async function getAnalysis(): Promise<Analysis> {
     targetRace: s?.targetRace ?? null,
   }
 
-  const input: ActivityInput[] = rows.map((r) => ({
+  // Real runs (Strava / CSV) always take precedence. If any exist, sample rows
+  // are ignored so seed data can never dilute a connected athlete's analysis.
+  const realRows = rows.filter((r) => r.source !== "sample")
+  const activeRows = realRows.length > 0 ? realRows : rows
+
+  const input: ActivityInput[] = activeRows.map((r) => ({
     id: r.id,
     startDate: new Date(r.startDate as unknown as string),
     distanceM: r.distanceM,
@@ -34,5 +39,5 @@ export async function getAnalysis(): Promise<Analysis> {
   }))
 
   const weeks = computeWeeklyStats(input, baseline)
-  return { weeks, activityCount: rows.length, baseline }
+  return { weeks, activityCount: activeRows.length, baseline }
 }
