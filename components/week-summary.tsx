@@ -1,8 +1,15 @@
+"use client"
+
+import { useState } from "react"
+import { ChevronLeft, ChevronRight } from "lucide-react"
 import { FlagBadge, severityDot } from "@/components/flag-badge"
+import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import type { WeekStats } from "@/lib/training/algorithm"
 import { formatPace } from "@/lib/format"
 import { cn } from "@/lib/utils"
+
+const PAGE_SIZE = 10
 
 function Metric({ label, value, sub }: { label: string; value: string; sub?: string }) {
   return (
@@ -67,6 +74,11 @@ export function ThisWeeksCall({ week }: { week: WeekStats }) {
 
 export function WeeklyTimeline({ weeks }: { weeks: WeekStats[] }) {
   const reversed = [...weeks].reverse()
+  const pageCount = Math.max(1, Math.ceil(reversed.length / PAGE_SIZE))
+  const [page, setPage] = useState(0)
+  const clampedPage = Math.min(page, pageCount - 1)
+  const paged = reversed.slice(clampedPage * PAGE_SIZE, clampedPage * PAGE_SIZE + PAGE_SIZE)
+
   return (
     <Card>
       <CardHeader>
@@ -86,7 +98,7 @@ export function WeeklyTimeline({ weeks }: { weeks: WeekStats[] }) {
               </tr>
             </thead>
             <tbody>
-              {reversed.map((w) => (
+              {paged.map((w) => (
                 <tr key={w.weekStart} className="border-b border-border/50 last:border-0">
                   <td className="py-2.5 pr-4 whitespace-nowrap text-muted-foreground">{w.weekStart}</td>
                   <td className="py-2.5 pr-4 font-mono tabular-nums">{w.distanceMiles}</td>
@@ -103,6 +115,33 @@ export function WeeklyTimeline({ weeks }: { weeks: WeekStats[] }) {
             </tbody>
           </table>
         </div>
+        {pageCount > 1 ? (
+          <div className="mt-4 flex items-center justify-between">
+            <span className="text-xs text-muted-foreground">
+              Page {clampedPage + 1} of {pageCount}
+            </span>
+            <div className="flex items-center gap-2">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setPage((p) => Math.max(0, p - 1))}
+                disabled={clampedPage === 0}
+              >
+                <ChevronLeft className="size-4" />
+                Prev
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setPage((p) => Math.min(pageCount - 1, p + 1))}
+                disabled={clampedPage === pageCount - 1}
+              >
+                Next
+                <ChevronRight className="size-4" />
+              </Button>
+            </div>
+          </div>
+        ) : null}
       </CardContent>
     </Card>
   )
