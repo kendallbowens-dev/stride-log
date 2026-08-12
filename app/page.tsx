@@ -18,7 +18,8 @@ import { Activity } from "lucide-react"
 export const dynamic = "force-dynamic"
 
 export default async function DashboardPage() {
-  const [{ weeks, activityCount, hasRealData }, strava, notion, latestLog, settingsRows] = await Promise.all([
+  const [{ weeks, activityCount, totalCount, hasRealData }, strava, notion, latestLog, settingsRows] =
+    await Promise.all([
     getAnalysis(),
     getStravaStatus(),
     getNotionStatus(),
@@ -88,7 +89,7 @@ export default async function DashboardPage() {
           <TabsTrigger value="baseline">Health baseline</TabsTrigger>
         </TabsList>
         <TabsContent value="data" className="mt-4">
-          <DataControls strava={strava} activityCount={activityCount} />
+          <DataControls strava={strava} activityCount={activityCount} totalCount={totalCount} />
         </TabsContent>
         <TabsContent value="baseline" className="mt-4">
           <SettingsForm initial={settingsValues} />

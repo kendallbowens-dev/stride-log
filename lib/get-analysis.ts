@@ -8,7 +8,10 @@ import { asc, eq } from "drizzle-orm"
 
 export interface Analysis {
   weeks: WeekStats[]
+  /** Number of real runs (Strava / CSV) driving the dashboard. 0 when nothing is populated. */
   activityCount: number
+  /** Total rows in the table, including sample data — used for the Clear control. */
+  totalCount: number
   /** True when at least one non-sample run (Strava / CSV) is present. */
   hasRealData: boolean
   baseline: TrainingBaseline
@@ -41,5 +44,11 @@ export async function getAnalysis(): Promise<Analysis> {
   }))
 
   const weeks = computeWeeklyStats(input, baseline)
-  return { weeks, activityCount: activeRows.length, hasRealData: realRows.length > 0, baseline }
+  return {
+    weeks,
+    activityCount: realRows.length,
+    totalCount: rows.length,
+    hasRealData: realRows.length > 0,
+    baseline,
+  }
 }

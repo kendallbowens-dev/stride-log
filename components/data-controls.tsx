@@ -13,7 +13,15 @@ import { useRouter } from "next/navigation"
 import { useRef, useState, useTransition } from "react"
 import { toast } from "sonner"
 
-export function DataControls({ strava, activityCount }: { strava: StravaStatus; activityCount: number }) {
+export function DataControls({
+  strava,
+  activityCount,
+  totalCount,
+}: {
+  strava: StravaStatus
+  activityCount: number
+  totalCount: number
+}) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
   const [busy, setBusy] = useState<string | null>(null)
@@ -128,7 +136,7 @@ export function DataControls({ strava, activityCount }: { strava: StravaStatus; 
             <Database className={busy === "seed" ? "size-4 animate-spin" : "size-4"} />
             Load sample data
           </Button>
-          {activityCount > 0 && (
+          {totalCount > 0 && (
             <Button
               size="sm"
               variant="ghost"
