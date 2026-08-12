@@ -29,7 +29,7 @@ export const settings = pgTable("settings", {
   restingHr: integer("resting_hr"),
   targetRace: text("target_race"),
   targetRaceDate: date("target_race_date"),
-  weeklyMileageGoalKm: doublePrecision("weekly_mileage_goal_km"),
+  weeklyMileageGoalMi: doublePrecision("weekly_mileage_goal_mi"),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
 })
 

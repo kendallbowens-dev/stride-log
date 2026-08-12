@@ -4,11 +4,20 @@
  * This is the source of truth for all numbers and flags. The AI agent only
  * narrates the output of these functions — it never invents load math.
  *
+ * All distances are reported in MILES and pace in seconds-per-mile. Activity
+ * distance is stored canonically in meters and converted here.
+ *
  * Two dimensions are analyzed per week:
  *   1. MILEAGE load via the Acute:Chronic Workload Ratio (ACWR) + the 10% rule.
  *   2. PACE / performance trend via rolling pace and (when available) the
  *      heart-rate cost of a given pace (aerobic decoupling proxy).
  */
+
+export const METERS_PER_MILE = 1609.344
+
+export function metersToMiles(m: number): number {
+  return m / METERS_PER_MILE
+}
 
 export type FlagDirection = "rampup" | "cutback" | "hold"
 export type FlagSeverity = "low" | "moderate" | "high"
@@ -31,23 +40,23 @@ export interface ActivityInput {
 export interface WeekStats {
   weekStart: string // yyyy-mm-dd (Monday)
   weekEnd: string
-  distanceKm: number
+  distanceMiles: number
   durationS: number
   sessions: number
-  avgPaceSecPerKm: number | null
+  avgPaceSecPerMile: number | null
   avgHr: number | null
-  acuteKm: number
-  chronicKm: number
+  acuteMiles: number
+  chronicMiles: number
   acwr: number | null
   wowChangePct: number | null // week-over-week mileage change
-  hrPaceIndex: number | null // avg HR per (km/h) — lower is more efficient
+  hrPaceIndex: number | null // avg HR per (mph) — lower is more efficient
   mileageFlag: Flag
   paceFlag: Flag
 }
 
 export interface TrainingBaseline {
   restingHr?: number | null
-  weeklyMileageGoalKm?: number | null
+  weeklyMileageGoalMiles?: number | null
   targetRace?: string | null
 }
 
@@ -79,14 +88,14 @@ function round(n: number, dp = 1): number {
 // ---------- core ----------
 
 /**
- * Sum of distance (km) in the [end-days, end] window.
+ * Sum of distance (miles) in the [end-days, end] window.
  */
-function windowKm(sorted: ActivityInput[], end: Date, days: number): number {
+function windowMiles(sorted: ActivityInput[], end: Date, days: number): number {
   const start = addDays(end, -days)
   let total = 0
   for (const a of sorted) {
     if (a.startDate > start && a.startDate <= end) {
-      total += a.distanceM / 1000
+      total += metersToMiles(a.distanceM)
     }
   }
   return total
@@ -114,7 +123,7 @@ export function computeWeeklyStats(
   }
 
   const result: WeekStats[] = []
-  let prevDistanceKm: number | null = null
+  let prevDistanceMiles: number | null = null
   const paceHistory: number[] = [] // trailing avg paces for trend
   const hrIndexHistory: number[] = []
 
@@ -122,43 +131,47 @@ export function computeWeeklyStats(
     const weekEnd = addDays(weekStart, 7) // exclusive end (start of next week)
     const inWeek = sorted.filter((a) => a.startDate >= weekStart && a.startDate < weekEnd)
 
-    const distanceKm = inWeek.reduce((s, a) => s + a.distanceM / 1000, 0)
+    const distanceMiles = inWeek.reduce((s, a) => s + metersToMiles(a.distanceM), 0)
     const durationS = inWeek.reduce((s, a) => s + a.movingTimeS, 0)
     const sessions = inWeek.length
-    const avgPaceSecPerKm = distanceKm > 0 ? durationS / distanceKm : null
+    const avgPaceSecPerMile = distanceMiles > 0 ? durationS / distanceMiles : null
 
     // distance-weighted average HR for the week
     const hrRuns = inWeek.filter((a) => a.avgHr && a.avgHr > 0)
-    const hrDistance = hrRuns.reduce((s, a) => s + a.distanceM / 1000, 0)
+    const hrDistance = hrRuns.reduce((s, a) => s + metersToMiles(a.distanceM), 0)
     const avgHr =
-      hrDistance > 0 ? hrRuns.reduce((s, a) => s + (a.avgHr as number) * (a.distanceM / 1000), 0) / hrDistance : null
+      hrDistance > 0
+        ? hrRuns.reduce((s, a) => s + (a.avgHr as number) * metersToMiles(a.distanceM), 0) / hrDistance
+        : null
 
-    // HR cost of pace: beats per (km/h). Lower = more aerobically efficient.
-    const speedKmh = avgPaceSecPerKm ? 3600 / avgPaceSecPerKm : null
-    const hrPaceIndex = avgHr && speedKmh ? avgHr / speedKmh : null
+    // HR cost of pace: beats per mph. Lower = more aerobically efficient.
+    const speedMph = avgPaceSecPerMile ? 3600 / avgPaceSecPerMile : null
+    const hrPaceIndex = avgHr && speedMph ? avgHr / speedMph : null
 
     // ACWR as of the end of this week
     const endOfWeek = addDays(weekStart, 7)
-    const acuteKm = windowKm(sorted, endOfWeek, 7)
-    const chronicKm = windowKm(sorted, endOfWeek, 28) / 4
-    const acwr = chronicKm > 0 ? acuteKm / chronicKm : null
+    const acuteMiles = windowMiles(sorted, endOfWeek, 7)
+    const chronicMiles = windowMiles(sorted, endOfWeek, 28) / 4
+    const acwr = chronicMiles > 0 ? acuteMiles / chronicMiles : null
 
     const wowChangePct =
-      prevDistanceKm && prevDistanceKm > 0 ? ((distanceKm - prevDistanceKm) / prevDistanceKm) * 100 : null
+      prevDistanceMiles && prevDistanceMiles > 0
+        ? ((distanceMiles - prevDistanceMiles) / prevDistanceMiles) * 100
+        : null
 
-    const mileageFlag = flagMileage(acwr, wowChangePct, distanceKm, baseline)
-    const paceFlag = flagPace(avgPaceSecPerKm, paceHistory, hrPaceIndex, hrIndexHistory, acwr, sessions)
+    const mileageFlag = flagMileage(acwr, wowChangePct, distanceMiles, baseline)
+    const paceFlag = flagPace(avgPaceSecPerMile, paceHistory, hrPaceIndex, hrIndexHistory, acwr, sessions)
 
     result.push({
       weekStart: ymd(weekStart),
       weekEnd: ymd(addDays(weekStart, 6)),
-      distanceKm: round(distanceKm),
+      distanceMiles: round(distanceMiles),
       durationS,
       sessions,
-      avgPaceSecPerKm: avgPaceSecPerKm ? Math.round(avgPaceSecPerKm) : null,
+      avgPaceSecPerMile: avgPaceSecPerMile ? Math.round(avgPaceSecPerMile) : null,
       avgHr: avgHr ? round(avgHr) : null,
-      acuteKm: round(acuteKm),
-      chronicKm: round(chronicKm),
+      acuteMiles: round(acuteMiles),
+      chronicMiles: round(chronicMiles),
       acwr: acwr ? round(acwr, 2) : null,
       wowChangePct: wowChangePct !== null ? round(wowChangePct) : null,
       hrPaceIndex: hrPaceIndex ? round(hrPaceIndex, 2) : null,
@@ -166,9 +179,9 @@ export function computeWeeklyStats(
       paceFlag,
     })
 
-    prevDistanceKm = distanceKm
-    if (avgPaceSecPerKm) {
-      paceHistory.push(avgPaceSecPerKm)
+    prevDistanceMiles = distanceMiles
+    if (avgPaceSecPerMile) {
+      paceHistory.push(avgPaceSecPerMile)
       if (paceHistory.length > 4) paceHistory.shift()
     }
     if (hrPaceIndex) {
@@ -185,10 +198,10 @@ export function computeWeeklyStats(
 function flagMileage(
   acwr: number | null,
   wowChangePct: number | null,
-  distanceKm: number,
+  distanceMiles: number,
   baseline: TrainingBaseline,
 ): Flag {
-  if (distanceKm === 0) {
+  if (distanceMiles === 0) {
     return {
       category: "mileage",
       direction: "rampup",
@@ -239,8 +252,8 @@ function flagMileage(
   // Healthy sweet spot 0.8–1.3
   if (acwr <= 1.3) {
     const goalNote =
-      baseline.weeklyMileageGoalKm && distanceKm < baseline.weeklyMileageGoalKm
-        ? ` You're below your ${baseline.weeklyMileageGoalKm} km goal, so a small increase is reasonable.`
+      baseline.weeklyMileageGoalMiles && distanceMiles < baseline.weeklyMileageGoalMiles
+        ? ` You're below your ${baseline.weeklyMileageGoalMiles} mi goal, so a small increase is reasonable.`
         : ""
     return {
       category: "mileage",
@@ -262,14 +275,14 @@ function flagMileage(
 // ---------- pace flagging (trend + HR cost of pace) ----------
 
 function flagPace(
-  avgPaceSecPerKm: number | null,
+  avgPaceSecPerMile: number | null,
   paceHistory: number[],
   hrPaceIndex: number | null,
   hrIndexHistory: number[],
   acwr: number | null,
   sessions: number,
 ): Flag {
-  if (avgPaceSecPerKm === null || sessions === 0) {
+  if (avgPaceSecPerMile === null || sessions === 0) {
     return {
       category: "pace",
       direction: "hold",
@@ -288,7 +301,7 @@ function flagPace(
   }
 
   const avgPrevPace = paceHistory.reduce((s, p) => s + p, 0) / paceHistory.length
-  const paceDeltaPct = ((avgPaceSecPerKm - avgPrevPace) / avgPrevPace) * 100 // negative = faster
+  const paceDeltaPct = ((avgPaceSecPerMile - avgPrevPace) / avgPrevPace) * 100 // negative = faster
 
   // HR cost of pace trend (rising index at same pace = aerobic decoupling / fatigue)
   let hrRising = false
@@ -329,11 +342,11 @@ function flagPace(
 
 // ---------- formatting helpers (shared by UI + agent) ----------
 
-export function formatPace(secPerKm: number | null): string {
-  if (!secPerKm) return "—"
-  const min = Math.floor(secPerKm / 60)
-  const sec = Math.round(secPerKm % 60)
-  return `${min}:${sec.toString().padStart(2, "0")}/km`
+export function formatPace(secPerMile: number | null): string {
+  if (!secPerMile) return "—"
+  const min = Math.floor(secPerMile / 60)
+  const sec = Math.round(secPerMile % 60)
+  return `${min}:${sec.toString().padStart(2, "0")}/mi`
 }
 
 export function directionLabel(d: FlagDirection): string {

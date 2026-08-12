@@ -21,7 +21,7 @@ export async function getAnalysis(): Promise<Analysis> {
   const s = settingsRows[0]
   const baseline: TrainingBaseline = {
     restingHr: s?.restingHr ?? null,
-    weeklyMileageGoalKm: s?.weeklyMileageGoalKm ?? null,
+    weeklyMileageGoalMiles: s?.weeklyMileageGoalMi ?? null,
     targetRace: s?.targetRace ?? null,
   }
 

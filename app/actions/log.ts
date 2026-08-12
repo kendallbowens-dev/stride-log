@@ -11,13 +11,16 @@ import { revalidatePath } from "next/cache"
 
 const MODEL = "openai/gpt-5.2"
 
-function buildContext(weeks: WeekStats[], baseline: { targetRace?: string | null; weeklyMileageGoalKm?: number | null }) {
+function buildContext(
+  weeks: WeekStats[],
+  baseline: { targetRace?: string | null; weeklyMileageGoalMiles?: number | null },
+) {
   const recent = weeks.slice(-12)
   const lines = recent.map((w) => {
     return [
       `Week of ${w.weekStart}:`,
-      `${w.distanceKm} km over ${w.sessions} runs`,
-      `avg pace ${formatPace(w.avgPaceSecPerKm)}`,
+      `${w.distanceMiles} mi over ${w.sessions} runs`,
+      `avg pace ${formatPace(w.avgPaceSecPerMile)}`,
       w.avgHr ? `avg HR ${w.avgHr}` : null,
       w.acwr !== null ? `ACWR ${w.acwr}` : "ACWR n/a",
       w.wowChangePct !== null ? `week-over-week ${w.wowChangePct > 0 ? "+" : ""}${w.wowChangePct}%` : null,
@@ -30,7 +33,7 @@ function buildContext(weeks: WeekStats[], baseline: { targetRace?: string | null
 
   const baselineLine = [
     baseline.targetRace ? `Target race: ${baseline.targetRace}.` : null,
-    baseline.weeklyMileageGoalKm ? `Weekly mileage goal: ${baseline.weeklyMileageGoalKm} km.` : null,
+    baseline.weeklyMileageGoalMiles ? `Weekly mileage goal: ${baseline.weeklyMileageGoalMiles} mi.` : null,
   ]
     .filter(Boolean)
     .join(" ")
@@ -55,7 +58,8 @@ export async function generateRunningLog() {
     "# Running Log — <date range>",
     "## This Week's Call  (two clear sub-points: **Mileage** and **Pace**, each stating cut back / ramp up / hold and why, grounded in the ACWR and pace data)",
     "## The Story So Far  (2-3 short paragraphs summarizing how the block has progressed)",
-    "## Weekly Log  (a compact bullet per week: date, km, avg pace, ACWR, and the key flag)",
+    "## Weekly Log  (a compact bullet per week: date, miles, avg pace, ACWR, and the key flag)",
+    "All distances are in miles and all paces are per mile. Never use kilometers.",
     "## Recommendations For Next Week  (3-5 concrete, actionable bullets on pace and mileage)",
   ].join("\n")
 

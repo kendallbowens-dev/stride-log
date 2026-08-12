@@ -31,8 +31,10 @@ export async function clearActivities() {
 
 /**
  * Import activities from a parsed CSV. Expected columns (case-insensitive):
- * date, distance_km (or distance_m), duration (mm:ss or seconds), avg_hr?, name?
+ * date, distance_mi (or distance_km / distance_m), duration (mm:ss or seconds), avg_hr?, name?
+ * A bare "distance" column is interpreted as miles.
  */
+const METERS_PER_MILE = 1609.344
 export async function importActivities(rows: Record<string, string>[]) {
   const toInsert: NewActivity[] = []
   let skipped = 0
@@ -52,8 +54,10 @@ export async function importActivities(rows: Record<string, string>[]) {
 
     let distanceM: number | null = null
     if (row["distance_m"]) distanceM = Number(row["distance_m"])
+    else if (row["distance_mi"]) distanceM = Number(row["distance_mi"]) * METERS_PER_MILE
+    else if (row["distance_miles"]) distanceM = Number(row["distance_miles"]) * METERS_PER_MILE
     else if (row["distance_km"]) distanceM = Number(row["distance_km"]) * 1000
-    else if (row["distance"]) distanceM = Number(row["distance"]) * 1000
+    else if (row["distance"]) distanceM = Number(row["distance"]) * METERS_PER_MILE
     if (!distanceM || isNaN(distanceM) || distanceM <= 0) {
       skipped++
       continue

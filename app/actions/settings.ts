@@ -16,7 +16,7 @@ export interface SettingsInput {
   restingHr?: number | null
   targetRace?: string | null
   targetRaceDate?: string | null
-  weeklyMileageGoalKm?: number | null
+  weeklyMileageGoalMi?: number | null
 }
 
 export async function saveSettings(input: SettingsInput) {
@@ -26,7 +26,7 @@ export async function saveSettings(input: SettingsInput) {
     restingHr: input.restingHr ?? null,
     targetRace: input.targetRace ?? null,
     targetRaceDate: input.targetRaceDate ?? null,
-    weeklyMileageGoalKm: input.weeklyMileageGoalKm ?? null,
+    weeklyMileageGoalMi: input.weeklyMileageGoalMi ?? null,
     updatedAt: new Date(),
   }
 
@@ -40,7 +40,7 @@ export async function saveSettings(input: SettingsInput) {
         restingHr: values.restingHr,
         targetRace: values.targetRace,
         targetRaceDate: values.targetRaceDate,
-        weeklyMileageGoalKm: values.weeklyMileageGoalKm,
+        weeklyMileageGoalMi: values.weeklyMileageGoalMi,
         updatedAt: values.updatedAt,
       },
     })
