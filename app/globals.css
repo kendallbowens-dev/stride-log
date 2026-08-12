@@ -151,3 +151,29 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Rendered running-log markdown */
+.prose-log {
+  @apply text-sm leading-relaxed text-foreground/90;
+}
+.prose-log h1 {
+  @apply mb-2 mt-0 font-sans text-xl font-semibold tracking-tight text-foreground;
+}
+.prose-log h2 {
+  @apply mb-2 mt-6 border-b border-border pb-1 font-sans text-base font-semibold tracking-tight text-foreground;
+}
+.prose-log h3 {
+  @apply mb-1 mt-4 font-sans text-sm font-semibold text-foreground;
+}
+.prose-log p {
+  @apply my-2 text-pretty;
+}
+.prose-log ul {
+  @apply my-2 flex flex-col gap-1.5 pl-1;
+}
+.prose-log li {
+  @apply relative pl-4 text-pretty before:absolute before:left-0 before:text-primary before:content-['—'];
+}
+.prose-log strong {
+  @apply font-semibold text-foreground;
+}
