@@ -33,6 +33,16 @@ export const settings = pgTable("settings", {
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
 })
 
+export const settingsBackup = pgTable("settings_backup", {
+  ownerId: text("owner_id").primaryKey().default("default"),
+  injuryHistory: text("injury_history"),
+  restingHr: integer("resting_hr"),
+  targetRace: text("target_race"),
+  targetRaceDate: date("target_race_date"),
+  weeklyMileageGoalMi: doublePrecision("weekly_mileage_goal_mi"),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
+})
+
 export const logEntries = pgTable("log_entries", {
   id: serial("id").primaryKey(),
   ownerId: text("owner_id").notNull().default("default"),
