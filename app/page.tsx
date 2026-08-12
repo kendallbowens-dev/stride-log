@@ -13,6 +13,10 @@ import { LogPanel } from "@/components/log-panel"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Activity } from "lucide-react"
 
+// This dashboard reads per-request data (database state + Vercel Connect tokens),
+// so it must render at request time rather than being prerendered at build time.
+export const dynamic = "force-dynamic"
+
 export default async function DashboardPage() {
   const [{ weeks, activityCount }, strava, notion, latestLog, settingsRows] = await Promise.all([
     getAnalysis(),
