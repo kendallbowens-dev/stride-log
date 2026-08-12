@@ -19,12 +19,30 @@ export async function getOrigin(): Promise<string> {
   return `${h.get("x-forwarded-proto") ?? "https"}://${host}`
 }
 
-export async function buildAuthorizeUrl(): Promise<string> {
+/**
+ * The redirect_uri sent to Strava. If STRAVA_REDIRECT_URI is set it wins, so the
+ * value always matches the callback registered in the Strava app settings. A bare
+ * domain (no path) is accepted and the callback path is appended for convenience.
+ * Otherwise it is derived from the current request origin.
+ */
+export async function getRedirectUri(): Promise<string> {
+  const configured = process.env.STRAVA_REDIRECT_URI?.trim()
+  if (configured) {
+    const withProtocol = /^https?:\/\//.test(configured) ? configured : `https://${configured}`
+    // If they only provided an origin/domain, append the callback path.
+    return /\/api\/strava\/callback\/?$/.test(withProtocol)
+      ? withProtocol.replace(/\/$/, "")
+      : `${withProtocol.replace(/\/$/, "")}/api/strava/callback`
+  }
   const origin = await getOrigin()
+  return `${origin}/api/strava/callback`
+}
+
+export async function buildAuthorizeUrl(): Promise<string> {
   const params = new URLSearchParams({
     client_id: process.env.STRAVA_CLIENT_ID!,
     response_type: "code",
-    redirect_uri: `${origin}/api/strava/callback`,
+    redirect_uri: await getRedirectUri(),
     approval_prompt: "auto",
     scope: "activity:read_all",
   })
