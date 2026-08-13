@@ -10,9 +10,6 @@ import { buildRunningLog } from "@/lib/log-builder"
 import { generateText } from "ai"
 import { desc, eq } from "drizzle-orm"
 import { revalidatePath } from "next/cache"
-import { getNotionClient, isNotionConnected } from "@/lib/notion/client"
-import { writeLogToNotion } from "@/lib/notion/writer"
-import type { NotionStatus } from "@/lib/types"
 
 const MODEL = "openai/gpt-5.2"
 
@@ -117,7 +114,7 @@ export async function generateRunningLog() {
     })
     .onConflictDoUpdate({
       target: [logEntries.ownerId, logEntries.weekStart],
-      set: { generatedMarkdown: markdown, summaryJson: summary, notionPageId: null, syncedAt: null },
+      set: { generatedMarkdown: markdown, summaryJson: summary },
     })
 
   revalidatePath("/")
@@ -132,36 +129,4 @@ export async function getLatestLog() {
     .orderBy(desc(logEntries.weekStart))
     .limit(1)
   return rows[0] ?? null
-}
-
-export async function getNotionStatus(): Promise<NotionStatus> {
-  const connected = await isNotionConnected()
-  return { connected }
-}
-
-export async function syncLogToNotion() {
-  const notion = await getNotionClient()
-  if (!notion) {
-    return { ok: false as const, error: "Notion is not connected yet.", needsAuth: true as const }
-  }
-
-  const latest = await getLatestLog()
-  if (!latest) {
-    return { ok: false as const, error: "Generate a log before syncing to Notion." }
-  }
-
-  const title = `Running Log — Week of ${latest.weekStart}`
-  try {
-    const { pageId, url } = await writeLogToNotion(notion, title, latest.generatedMarkdown)
-    await db
-      .update(logEntries)
-      .set({ notionPageId: pageId, syncedAt: new Date() })
-      .where(eq(logEntries.id, latest.id))
-    revalidatePath("/")
-    return { ok: true as const, url }
-  } catch (err) {
-    const message = err instanceof Error ? err.message : "Failed to write to Notion."
-    console.log("[v0] notion sync error:", message)
-    return { ok: false as const, error: message }
-  }
 }

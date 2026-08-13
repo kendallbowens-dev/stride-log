@@ -49,8 +49,6 @@ export const logEntries = pgTable("log_entries", {
   weekStart: date("week_start").notNull(),
   generatedMarkdown: text("generated_markdown").notNull(),
   summaryJson: jsonb("summary_json"),
-  notionPageId: text("notion_page_id"),
-  syncedAt: timestamp("synced_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
 })
 

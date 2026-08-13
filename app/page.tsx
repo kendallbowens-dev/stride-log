@@ -1,6 +1,6 @@
 import { getAnalysis } from "@/lib/get-analysis"
 import { getStravaStatus } from "@/app/actions/strava"
-import { getLatestLog, getNotionStatus } from "@/app/actions/log"
+import { getLatestLog } from "@/app/actions/log"
 import { db } from "@/lib/db"
 import { settings } from "@/lib/db/schema"
 import { OWNER_ID } from "@/lib/owner"
@@ -18,14 +18,13 @@ import { Activity } from "lucide-react"
 export const dynamic = "force-dynamic"
 
 export default async function DashboardPage() {
-  const [{ weeks, activityCount, totalCount, hasRealData }, strava, notion, latestLog, settingsRows] =
+  const [{ weeks, activityCount, totalCount, hasRealData }, strava, latestLog, settingsRows] =
     await Promise.all([
-    getAnalysis(),
-    getStravaStatus(),
-    getNotionStatus(),
-    getLatestLog(),
-    db.select().from(settings).where(eq(settings.ownerId, OWNER_ID)).limit(1),
-  ])
+      getAnalysis(),
+      getStravaStatus(),
+      getLatestLog(),
+      db.select().from(settings).where(eq(settings.ownerId, OWNER_ID)).limit(1),
+    ])
 
   const s = settingsRows[0]
   const settingsValues = s
@@ -57,7 +56,7 @@ export default async function DashboardPage() {
         </h1>
         <p className="max-w-2xl text-pretty text-sm leading-relaxed text-muted-foreground">
           Pulls your Runna runs from Strava, tracks acute vs. chronic workload and pace trends, and flags exactly when
-          to cut back or ramp up — then writes a narrative log to Notion.
+          to cut back or ramp up — then writes a narrative training log.
         </p>
       </header>
 
@@ -65,12 +64,7 @@ export default async function DashboardPage() {
         <>
           <ThisWeeksCall week={currentWeek} />
           <LoadCharts weeks={weeks} />
-          <LogPanel
-            initialMarkdown={latestLog?.generatedMarkdown ?? null}
-            initialSyncedAt={latestLog?.syncedAt ? latestLog.syncedAt.toISOString() : null}
-            notionConnected={notion.connected}
-            hasActivities={activityCount > 0}
-          />
+          <LogPanel initialMarkdown={latestLog?.generatedMarkdown ?? null} hasActivities={activityCount > 0} />
           <WeeklyTimeline weeks={weeks} />
         </>
       ) : (

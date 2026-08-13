@@ -14,7 +14,3 @@ export interface StravaStatus {
   /** The bare host of redirectUri — paste this into Strava's "Authorization Callback Domain". */
   callbackDomain: string
 }
-
-export interface NotionStatus {
-  connected: boolean
-}
