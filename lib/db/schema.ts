@@ -8,6 +8,7 @@ import {
   text,
   timestamp,
   date,
+  unique,
 } from "drizzle-orm/pg-core"
 
 export const activities = pgTable("activities", {
@@ -44,14 +45,21 @@ export const settingsBackup = pgTable("settings_backup", {
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
 })
 
-export const logEntries = pgTable("log_entries", {
-  id: serial("id").primaryKey(),
-  ownerId: text("owner_id").notNull().default("default"),
-  weekStart: date("week_start").notNull(),
-  generatedMarkdown: text("generated_markdown").notNull(),
-  summaryJson: jsonb("summary_json"),
-  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
-})
+export const logEntries = pgTable(
+  "log_entries",
+  {
+    id: serial("id").primaryKey(),
+    ownerId: text("owner_id").notNull().default("default"),
+    weekStart: date("week_start").notNull(),
+    generatedMarkdown: text("generated_markdown").notNull(),
+    summaryJson: jsonb("summary_json"),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+  },
+  (t) => ({
+    // The log upsert relies on this to ON CONFLICT one row per owner/week.
+    ownerWeekUnique: unique("log_entries_owner_week_unique").on(t.ownerId, t.weekStart),
+  }),
+)
 
 export const stravaConnection = pgTable("strava_connection", {
   ownerId: text("owner_id").primaryKey().default("default"),
