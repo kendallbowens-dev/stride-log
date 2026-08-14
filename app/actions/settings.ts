@@ -2,12 +2,13 @@
 
 import { db } from "@/lib/db"
 import { settings } from "@/lib/db/schema"
-import { OWNER_ID } from "@/lib/owner"
+import { getOwnerId } from "@/lib/owner"
 import { eq } from "drizzle-orm"
 import { revalidatePath } from "next/cache"
 
 export async function getSettings() {
-  const rows = await db.select().from(settings).where(eq(settings.ownerId, OWNER_ID)).limit(1)
+  const ownerId = await getOwnerId()
+  const rows = await db.select().from(settings).where(eq(settings.ownerId, ownerId)).limit(1)
   return rows[0] ?? null
 }
 
@@ -20,8 +21,9 @@ export interface SettingsInput {
 }
 
 export async function saveSettings(input: SettingsInput) {
+  const ownerId = await getOwnerId()
   const values = {
-    ownerId: OWNER_ID,
+    ownerId,
     injuryHistory: input.injuryHistory ?? null,
     restingHr: input.restingHr ?? null,
     targetRace: input.targetRace ?? null,

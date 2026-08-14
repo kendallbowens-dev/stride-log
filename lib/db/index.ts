@@ -1,22 +1,29 @@
-import { neon } from "@neondatabase/serverless"
-import { drizzle, type NeonHttpDatabase } from "drizzle-orm/neon-http"
+import { drizzle, type NodePgDatabase } from "drizzle-orm/node-postgres"
+import { Pool } from "pg"
 import * as schema from "./schema"
 
-type DB = NeonHttpDatabase<typeof schema>
+type DB = NodePgDatabase<typeof schema>
 
-// Lazily instantiate the Drizzle client so the Neon connection string is only
-// read when a query actually runs (at request time). Evaluating `neon()` at
+// Lazily instantiate the pg Pool + Drizzle client so the Neon connection string
+// is only read when a query actually runs (at request time). Evaluating this at
 // module load breaks `next build`, which imports route/action modules during
 // page-data collection when DATABASE_URL is not in scope.
+let _pool: Pool | null = null
 let _db: DB | null = null
 
-function getDb(): DB {
-  if (_db) return _db
+export function getPool(): Pool {
+  if (_pool) return _pool
   const connectionString = process.env.DATABASE_URL
   if (!connectionString) {
     throw new Error("DATABASE_URL is not set. Add the Neon integration to provide it.")
   }
-  _db = drizzle(neon(connectionString), { schema })
+  _pool = new Pool({ connectionString })
+  return _pool
+}
+
+function getDb(): DB {
+  if (_db) return _db
+  _db = drizzle(getPool(), { schema })
   return _db
 }
 
