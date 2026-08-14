@@ -58,7 +58,7 @@ export function generateSampleActivities(ownerId: string): NewActivity[] {
       start.setUTCHours(8, 0, 0, 0)
 
       activities.push({
-        id: `sample-${w}-${r}`,
+        id: `sample-${ownerId}-${w}-${r}`,
         ownerId,
         source: "sample",
         name: r === 3 ? "Long run" : r === 1 ? "Tempo / quality" : "Easy run",

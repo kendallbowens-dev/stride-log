@@ -173,7 +173,7 @@ export async function syncStravaActivities(ownerId: string): Promise<{ imported:
   const runs = collected.filter((a) => a.type === "Run" || a.sport_type === "Run" || a.sport_type === "TrailRun")
 
   const toInsert: NewActivity[] = runs.map((a) => ({
-    id: `strava-${a.id}`,
+    id: `strava-${ownerId}-${a.id}`,
     ownerId,
     source: "strava",
     name: a.name,

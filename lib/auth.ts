@@ -21,8 +21,13 @@ export const auth = betterAuth({
     ...(process.env.VERCEL_PROJECT_PRODUCTION_URL
       ? [`https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`]
       : []),
-    // Local dev / preview testing over http://localhost:<port>.
-    ...(process.env.NODE_ENV === "development" ? ["http://localhost:3000"] : []),
+    // In dev/preview the app is reached over several dynamic origins: a
+    // localhost port, the v0 preview iframe, and the Vercel sandbox host
+    // (sb-*.vercel.run). Trust them all so the session cookie is accepted
+    // regardless of which origin the browser used.
+    ...(process.env.NODE_ENV === "development"
+      ? ["http://localhost:3000", "https://*.vercel.run", "https://*.v0.build"]
+      : []),
   ],
   session: {
     expiresIn: 60 * 60 * 24 * 7, // 7 days

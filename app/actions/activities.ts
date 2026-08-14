@@ -78,7 +78,7 @@ export async function importActivities(rows: Record<string, string>[]) {
     const avgHr = hrRaw ? Number(hrRaw) : null
 
     toInsert.push({
-      id: `csv-${start.getTime()}-${i}`,
+      id: `csv-${ownerId}-${start.getTime()}-${i}`,
       ownerId,
       source: "csv",
       name: row["name"] ?? row["title"] ?? "Imported run",
