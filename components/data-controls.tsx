@@ -13,6 +13,12 @@ import { useRouter } from "next/navigation"
 import { useRef, useState, useTransition } from "react"
 import { toast } from "sonner"
 
+function formatSyncDate(value: string | number | Date) {
+  const d = new Date(value)
+  // Format in UTC so the server and client render an identical string (avoids hydration mismatch).
+  return `${d.getUTCMonth() + 1}/${d.getUTCDate()}/${d.getUTCFullYear()}`
+}
+
 export function DataControls({
   strava,
   activityCount,
@@ -79,7 +85,7 @@ export function DataControls({
             <div className="flex flex-wrap items-center gap-2">
               <span className="text-sm text-muted-foreground">
                 Connected{strava.athleteName ? ` as ${strava.athleteName}` : ""}
-                {strava.lastSyncAt ? ` · last sync ${new Date(strava.lastSyncAt).toLocaleDateString()}` : ""}
+                  {strava.lastSyncAt ? ` · last sync ${formatSyncDate(strava.lastSyncAt)}` : ""}
               </span>
               <div className="flex gap-2">
                 <Button
