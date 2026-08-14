@@ -2,7 +2,6 @@ import "server-only"
 
 import { db } from "@/lib/db"
 import { activities, settings, settingsBackup, stravaConnection, type NewActivity } from "@/lib/db/schema"
-import { OWNER_ID } from "@/lib/owner"
 import { eq } from "drizzle-orm"
 import { headers } from "next/headers"
 
@@ -59,12 +58,12 @@ export async function exchangeCodeForToken(code: string): Promise<TokenResponse>
   return res.json()
 }
 
-export async function storeConnection(token: TokenResponse) {
+export async function storeConnection(ownerId: string, token: TokenResponse) {
   const athleteName = token.athlete
     ? `${token.athlete.firstname ?? ""} ${token.athlete.lastname ?? ""}`.trim()
     : null
   const values = {
-    ownerId: OWNER_ID,
+    ownerId,
     athleteId: token.athlete ? String(token.athlete.id) : null,
     athleteName,
     accessToken: token.access_token,
@@ -85,7 +84,7 @@ export async function storeConnection(token: TokenResponse) {
       },
     })
 
-  await restoreSettingsBackup()
+  await restoreSettingsBackup(ownerId)
 }
 
 /**
@@ -93,18 +92,18 @@ export async function storeConnection(token: TokenResponse) {
  * `disconnectStrava`), if one exists, so reconnecting the same account
  * brings the baseline back instead of leaving it empty.
  */
-async function restoreSettingsBackup() {
-  const rows = await db.select().from(settingsBackup).where(eq(settingsBackup.ownerId, OWNER_ID)).limit(1)
+async function restoreSettingsBackup(ownerId: string) {
+  const rows = await db.select().from(settingsBackup).where(eq(settingsBackup.ownerId, ownerId)).limit(1)
   const backup = rows[0]
   if (!backup) return
 
-  const { ownerId, ...rest } = backup
+  const { ownerId: _ownerId, ...rest } = backup
   await db.insert(settings).values(backup).onConflictDoUpdate({ target: settings.ownerId, set: rest })
-  await db.delete(settingsBackup).where(eq(settingsBackup.ownerId, OWNER_ID))
+  await db.delete(settingsBackup).where(eq(settingsBackup.ownerId, ownerId))
 }
 
-async function getValidAccessToken(): Promise<string | null> {
-  const rows = await db.select().from(stravaConnection).where(eq(stravaConnection.ownerId, OWNER_ID)).limit(1)
+async function getValidAccessToken(ownerId: string): Promise<string | null> {
+  const rows = await db.select().from(stravaConnection).where(eq(stravaConnection.ownerId, ownerId)).limit(1)
   const conn = rows[0]
   if (!conn) return null
 
@@ -132,7 +131,7 @@ async function getValidAccessToken(): Promise<string | null> {
       refreshToken: token.refresh_token,
       expiresAt: new Date(token.expires_at * 1000),
     })
-    .where(eq(stravaConnection.ownerId, OWNER_ID))
+    .where(eq(stravaConnection.ownerId, ownerId))
   return token.access_token
 }
 
@@ -152,8 +151,8 @@ interface StravaActivity {
  * Pulls the athlete's runs from Strava (last ~180 days) and upserts them.
  * Returns the number of run activities imported.
  */
-export async function syncStravaActivities(): Promise<{ imported: number }> {
-  const accessToken = await getValidAccessToken()
+export async function syncStravaActivities(ownerId: string): Promise<{ imported: number }> {
+  const accessToken = await getValidAccessToken(ownerId)
   if (!accessToken) throw new Error("No valid Strava connection")
 
   const after = Math.floor((Date.now() - 180 * 24 * 3600 * 1000) / 1000)
@@ -174,8 +173,8 @@ export async function syncStravaActivities(): Promise<{ imported: number }> {
   const runs = collected.filter((a) => a.type === "Run" || a.sport_type === "Run" || a.sport_type === "TrailRun")
 
   const toInsert: NewActivity[] = runs.map((a) => ({
-    id: `strava-${a.id}`,
-    ownerId: OWNER_ID,
+    id: `strava-${ownerId}-${a.id}`,
+    ownerId,
     source: "strava",
     name: a.name,
     startDate: new Date(a.start_date),
@@ -205,7 +204,7 @@ export async function syncStravaActivities(): Promise<{ imported: number }> {
     }
   }
 
-  await db.update(stravaConnection).set({ lastSyncAt: new Date() }).where(eq(stravaConnection.ownerId, OWNER_ID))
+  await db.update(stravaConnection).set({ lastSyncAt: new Date() }).where(eq(stravaConnection.ownerId, ownerId))
 
   return { imported: toInsert.length }
 }

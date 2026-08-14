@@ -3,7 +3,7 @@
 import { db } from "@/lib/db"
 import { logEntries } from "@/lib/db/schema"
 import { getAnalysis } from "@/lib/get-analysis"
-import { OWNER_ID } from "@/lib/owner"
+import { getOwnerId } from "@/lib/owner"
 import type { WeekStats } from "@/lib/training/algorithm"
 import { directionLabel, formatPace } from "@/lib/format"
 import { buildRunningLog } from "@/lib/log-builder"
@@ -44,7 +44,8 @@ function buildContext(
 }
 
 export async function generateRunningLog() {
-  const { weeks, baseline, activityCount } = await getAnalysis()
+  const ownerId = await getOwnerId()
+  const { weeks, baseline, activityCount } = await getAnalysis(ownerId)
   if (activityCount === 0 || weeks.length === 0) {
     return { ok: false as const, error: "No activities to analyze yet. Load sample data or import runs first." }
   }
@@ -107,7 +108,7 @@ export async function generateRunningLog() {
   await db
     .insert(logEntries)
     .values({
-      ownerId: OWNER_ID,
+      ownerId,
       weekStart,
       generatedMarkdown: markdown,
       summaryJson: summary,
@@ -122,10 +123,11 @@ export async function generateRunningLog() {
 }
 
 export async function getLatestLog() {
+  const ownerId = await getOwnerId()
   const rows = await db
     .select()
     .from(logEntries)
-    .where(eq(logEntries.ownerId, OWNER_ID))
+    .where(eq(logEntries.ownerId, ownerId))
     .orderBy(desc(logEntries.weekStart))
     .limit(1)
   return rows[0] ?? null

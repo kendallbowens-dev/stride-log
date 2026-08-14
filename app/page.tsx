@@ -1,15 +1,18 @@
 import { getAnalysis } from "@/lib/get-analysis"
 import { getStravaStatus } from "@/app/actions/strava"
 import { getLatestLog } from "@/app/actions/log"
+import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
 import { settings } from "@/lib/db/schema"
-import { OWNER_ID } from "@/lib/owner"
 import { eq } from "drizzle-orm"
+import { headers } from "next/headers"
+import { redirect } from "next/navigation"
 import { DataControls } from "@/components/data-controls"
 import { SettingsForm } from "@/components/settings-form"
 import { LoadCharts } from "@/components/load-charts"
 import { ThisWeeksCall, WeeklyTimeline } from "@/components/week-summary"
 import { LogPanel } from "@/components/log-panel"
+import { AccountMenu } from "@/components/account-menu"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Activity } from "lucide-react"
 
@@ -18,12 +21,16 @@ import { Activity } from "lucide-react"
 export const dynamic = "force-dynamic"
 
 export default async function DashboardPage() {
+  const session = await auth.api.getSession({ headers: await headers() })
+  if (!session?.user) redirect("/sign-in")
+  const ownerId = session.user.id
+
   const [{ weeks, activityCount, totalCount, hasRealData }, strava, latestLog, settingsRows] =
     await Promise.all([
-      getAnalysis(),
+      getAnalysis(ownerId),
       getStravaStatus(),
       getLatestLog(),
-      db.select().from(settings).where(eq(settings.ownerId, OWNER_ID)).limit(1),
+      db.select().from(settings).where(eq(settings.ownerId, ownerId)).limit(1),
     ])
 
   const s = settingsRows[0]
@@ -45,11 +52,14 @@ export default async function DashboardPage() {
   return (
     <main className="mx-auto flex min-h-svh w-full max-w-5xl flex-col gap-6 px-4 py-8 md:px-6 md:py-10">
       <header className="flex flex-col gap-2">
-        <div className="flex items-center gap-2 text-primary">
-          <Activity className="size-5" />
-          <span className="font-mono text-xs uppercase tracking-[0.2em] text-muted-foreground">
-            Pace &amp; Load Agent
-          </span>
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2 text-primary">
+            <Activity className="size-5" />
+            <span className="font-mono text-xs uppercase tracking-[0.2em] text-muted-foreground">
+              Pace &amp; Load Agent
+            </span>
+          </div>
+          <AccountMenu email={session.user.email} name={session.user.name} />
         </div>
         <h1 className="text-2xl font-semibold tracking-tight text-balance md:text-3xl">
           Running log &amp; training-load coach

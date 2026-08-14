@@ -2,31 +2,34 @@
 
 import { db } from "@/lib/db"
 import { activities, type NewActivity } from "@/lib/db/schema"
-import { OWNER_ID } from "@/lib/owner"
+import { getOwnerId } from "@/lib/owner"
 import { generateSampleActivities } from "@/lib/sample-data"
 import { milesToMeters } from "@/lib/units"
 import { and, desc, eq } from "drizzle-orm"
 import { revalidatePath } from "next/cache"
 
 export async function getActivities() {
+  const ownerId = await getOwnerId()
   return db
     .select()
     .from(activities)
-    .where(eq(activities.ownerId, OWNER_ID))
+    .where(eq(activities.ownerId, ownerId))
     .orderBy(desc(activities.startDate))
 }
 
 export async function seedSampleData() {
-  const sample = generateSampleActivities()
+  const ownerId = await getOwnerId()
+  const sample = generateSampleActivities(ownerId)
   // clear existing sample rows first so re-seeding is idempotent
-  await db.delete(activities).where(and(eq(activities.ownerId, OWNER_ID), eq(activities.source, "sample")))
+  await db.delete(activities).where(and(eq(activities.ownerId, ownerId), eq(activities.source, "sample")))
   await db.insert(activities).values(sample).onConflictDoNothing()
   revalidatePath("/")
   return { inserted: sample.length }
 }
 
 export async function clearActivities() {
-  await db.delete(activities).where(eq(activities.ownerId, OWNER_ID))
+  const ownerId = await getOwnerId()
+  await db.delete(activities).where(eq(activities.ownerId, ownerId))
   revalidatePath("/")
 }
 
@@ -36,6 +39,7 @@ export async function clearActivities() {
  * A bare "distance" column is interpreted as miles.
  */
 export async function importActivities(rows: Record<string, string>[]) {
+  const ownerId = await getOwnerId()
   const toInsert: NewActivity[] = []
   let skipped = 0
 
@@ -74,8 +78,8 @@ export async function importActivities(rows: Record<string, string>[]) {
     const avgHr = hrRaw ? Number(hrRaw) : null
 
     toInsert.push({
-      id: `csv-${start.getTime()}-${i}`,
-      ownerId: OWNER_ID,
+      id: `csv-${ownerId}-${start.getTime()}-${i}`,
+      ownerId,
       source: "csv",
       name: row["name"] ?? row["title"] ?? "Imported run",
       startDate: start,

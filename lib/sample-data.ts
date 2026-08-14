@@ -1,5 +1,4 @@
 import type { NewActivity } from "@/lib/db/schema"
-import { OWNER_ID } from "@/lib/owner"
 import { milesToMeters } from "@/lib/units"
 
 /**
@@ -12,7 +11,7 @@ import { milesToMeters } from "@/lib/units"
  * the pace + HR analysis has something to detect. All distances are in MILES
  * and paces in seconds-per-mile; they are converted to meters for storage.
  */
-export function generateSampleActivities(): NewActivity[] {
+export function generateSampleActivities(ownerId: string): NewActivity[] {
   // target weekly miles per week (index 0 = oldest); week 9 is a deliberate spike
   const weeklyMiles = [24, 25, 26, 24, 28, 30, 27, 33, 37, 45, 28, 35, 38, 26]
   // base easy pace sec/mile, improving over time (lower = faster)
@@ -59,8 +58,8 @@ export function generateSampleActivities(): NewActivity[] {
       start.setUTCHours(8, 0, 0, 0)
 
       activities.push({
-        id: `sample-${w}-${r}`,
-        ownerId: OWNER_ID,
+        id: `sample-${ownerId}-${w}-${r}`,
+        ownerId,
         source: "sample",
         name: r === 3 ? "Long run" : r === 1 ? "Tempo / quality" : "Easy run",
         startDate: start,
