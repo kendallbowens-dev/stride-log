@@ -148,8 +148,9 @@ interface StravaActivity {
 }
 
 /**
- * Pulls the athlete's runs from Strava (last ~180 days) and upserts them.
- * Returns the number of run activities imported.
+ * Pulls the athlete's activities from Strava (last ~180 days) and upserts them.
+ * Imports runs, walks/hikes, weight training, and yoga — each mapped to a
+ * canonical `type` the dashboard analyzes. Returns the number imported.
  */
 export async function syncStravaActivities(ownerId: string): Promise<{ imported: number }> {
   const accessToken = await getValidAccessToken(ownerId)
@@ -170,20 +171,34 @@ export async function syncStravaActivities(ownerId: string): Promise<{ imported:
     if (batch.length < perPage) break
   }
 
-  const runs = collected.filter((a) => a.type === "Run" || a.sport_type === "Run" || a.sport_type === "TrailRun")
+  // Map Strava's type / sport_type onto the canonical disciplines the
+  // dashboard analyzes. Anything outside this map is ignored.
+  const canonicalType = (a: StravaActivity): string | null => {
+    const t = a.sport_type || a.type
+    if (t === "Run" || t === "TrailRun" || t === "VirtualRun") return "Run"
+    if (t === "Walk" || t === "Hike") return "Walk"
+    if (t === "WeightTraining" || t === "Workout" || t === "Crossfit") return "WeightTraining"
+    if (t === "Yoga") return "Yoga"
+    return null
+  }
 
-  const toInsert: NewActivity[] = runs.map((a) => ({
-    id: `strava-${ownerId}-${a.id}`,
-    ownerId,
-    source: "strava",
-    name: a.name,
-    startDate: new Date(a.start_date),
-    distanceM: Math.round(a.distance),
-    movingTimeS: a.moving_time,
-    avgHr: a.average_heartrate ?? null,
-    totalElevationM: a.total_elevation_gain ?? 0,
-    type: "Run",
-  }))
+  const toInsert: NewActivity[] = []
+  for (const a of collected) {
+    const type = canonicalType(a)
+    if (!type) continue
+    toInsert.push({
+      id: `strava-${ownerId}-${a.id}`,
+      ownerId,
+      source: "strava",
+      name: a.name,
+      startDate: new Date(a.start_date),
+      distanceM: Math.round(a.distance ?? 0),
+      movingTimeS: a.moving_time,
+      avgHr: a.average_heartrate ?? null,
+      totalElevationM: a.total_elevation_gain ?? 0,
+      type,
+    })
+  }
 
   if (toInsert.length > 0) {
     // upsert one by one to refresh existing rows
@@ -199,6 +214,7 @@ export async function syncStravaActivities(ownerId: string): Promise<{ imported:
             movingTimeS: row.movingTimeS,
             avgHr: row.avgHr,
             totalElevationM: row.totalElevationM,
+            type: row.type,
           },
         })
     }
