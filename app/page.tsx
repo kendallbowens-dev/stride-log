@@ -11,6 +11,7 @@ import { DataControls } from "@/components/data-controls"
 import { SettingsForm } from "@/components/settings-form"
 import { LoadCharts } from "@/components/load-charts"
 import { ThisWeeksCall, WeeklyTimeline } from "@/components/week-summary"
+import { DisciplineSummary } from "@/components/discipline-summary"
 import { LogPanel } from "@/components/log-panel"
 import { AccountMenu } from "@/components/account-menu"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -25,7 +26,7 @@ export default async function DashboardPage() {
   if (!session?.user) redirect("/sign-in")
   const ownerId = session.user.id
 
-  const [{ weeks, activityCount, totalCount, hasRealData }, strava, latestLog, settingsRows] =
+  const [{ weeks, activityCount, totalCount, hasRealData, disciplines }, strava, latestLog, settingsRows] =
     await Promise.all([
       getAnalysis(ownerId),
       getStravaStatus(),
@@ -49,6 +50,8 @@ export default async function DashboardPage() {
   // Sample-only data does not drive the summary, charts, or log.
   const hasData = hasRealData && currentWeek
 
+  const disciplineByKey = Object.fromEntries(disciplines.map((d) => [d.discipline, d]))
+
   return (
     <main className="mx-auto flex min-h-svh w-full max-w-5xl flex-col gap-6 px-4 py-8 md:px-6 md:py-10">
       <header className="flex flex-col gap-2">
@@ -62,41 +65,57 @@ export default async function DashboardPage() {
           <AccountMenu email={session.user.email} name={session.user.name} />
         </div>
         <h1 className="text-2xl font-semibold tracking-tight text-balance md:text-3xl">
-          Running log &amp; training-load coach
+          Training log &amp; multi-sport load coach
         </h1>
         <p className="max-w-2xl text-pretty text-sm leading-relaxed text-muted-foreground">
-          Pulls your Runna runs from Strava, tracks acute vs. chronic workload and pace trends, and flags exactly when
-          to cut back or ramp up — then writes a narrative training log.
+          Pulls your Strava activities, tracks acute vs. chronic workload for each discipline, and tells you exactly
+          what to adjust — cut back, hold, or ramp up — then writes a narrative running log.
         </p>
       </header>
 
-      {hasData ? (
-        <>
-          <ThisWeeksCall week={currentWeek} />
-          <LoadCharts weeks={weeks} />
-          <LogPanel initialMarkdown={latestLog?.generatedMarkdown ?? null} hasActivities={activityCount > 0} />
-          <WeeklyTimeline weeks={weeks} />
-        </>
-      ) : (
-        <div className="rounded-xl border border-dashed border-border bg-card/40 p-8 text-center">
-          <h2 className="text-lg font-medium">No training data yet</h2>
-          <p className="mx-auto mt-1 max-w-md text-pretty text-sm text-muted-foreground">
-            Connect your Strava account or import a CSV of your runs below to see your weekly load analysis and cut-back
-            / ramp-up flags.
-          </p>
-        </div>
-      )}
-
-      <Tabs defaultValue="data" className="w-full">
-        <TabsList>
-          <TabsTrigger value="data">Data sources</TabsTrigger>
-          <TabsTrigger value="baseline">Health baseline</TabsTrigger>
+      <Tabs defaultValue="running" className="w-full">
+        <TabsList className="flex-wrap">
+          <TabsTrigger value="running">Running</TabsTrigger>
+          <TabsTrigger value="walking">Walking</TabsTrigger>
+          <TabsTrigger value="strength">Strength</TabsTrigger>
+          <TabsTrigger value="yoga">Yoga</TabsTrigger>
+          <TabsTrigger value="setup">Setup</TabsTrigger>
         </TabsList>
-        <TabsContent value="data" className="mt-4">
-          <DataControls strava={strava} activityCount={activityCount} totalCount={totalCount} />
+
+        <TabsContent value="running" className="mt-4">
+          {hasData ? (
+            <div className="flex flex-col gap-6">
+              <ThisWeeksCall week={currentWeek} />
+              <LoadCharts weeks={weeks} />
+              <LogPanel initialMarkdown={latestLog?.generatedMarkdown ?? null} hasActivities={activityCount > 0} />
+              <WeeklyTimeline weeks={weeks} />
+            </div>
+          ) : (
+            <div className="rounded-xl border border-dashed border-border bg-card/40 p-8 text-center">
+              <h2 className="text-lg font-medium">No running data yet</h2>
+              <p className="mx-auto mt-1 max-w-md text-pretty text-sm text-muted-foreground">
+                Connect your Strava account or import a CSV of your runs from the Setup tab to see your weekly load
+                analysis and cut-back / ramp-up flags.
+              </p>
+            </div>
+          )}
         </TabsContent>
-        <TabsContent value="baseline" className="mt-4">
-          <SettingsForm initial={settingsValues} />
+
+        <TabsContent value="walking" className="mt-4">
+          <DisciplineSummary analysis={disciplineByKey.walking} />
+        </TabsContent>
+        <TabsContent value="strength" className="mt-4">
+          <DisciplineSummary analysis={disciplineByKey.strength} />
+        </TabsContent>
+        <TabsContent value="yoga" className="mt-4">
+          <DisciplineSummary analysis={disciplineByKey.yoga} />
+        </TabsContent>
+
+        <TabsContent value="setup" className="mt-4">
+          <div className="flex flex-col gap-6">
+            <DataControls strava={strava} activityCount={activityCount} totalCount={totalCount} />
+            <SettingsForm initial={settingsValues} />
+          </div>
         </TabsContent>
       </Tabs>
     </main>

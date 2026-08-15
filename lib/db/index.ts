@@ -17,7 +17,16 @@ export function getPool(): Pool {
   if (!connectionString) {
     throw new Error("DATABASE_URL is not set. Add the Neon integration to provide it.")
   }
-  _pool = new Pool({ connectionString })
+  // Strip `sslmode` from the URL and configure SSL explicitly. Newer `pg`
+  // versions emit a deprecation warning when the connection string uses
+  // sslmode aliases like `require`. Neon serves a publicly-trusted cert, so
+  // verifying it (rejectUnauthorized: true) keeps the current secure behavior.
+  const url = new URL(connectionString)
+  url.searchParams.delete("sslmode")
+  _pool = new Pool({
+    connectionString: url.toString(),
+    ssl: { rejectUnauthorized: true },
+  })
   return _pool
 }
 
