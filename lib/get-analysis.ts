@@ -26,6 +26,8 @@ export interface DisciplineAnalysis {
   weeks: CrossWeekStats[]
   /** Number of real sessions (Strava / CSV) of this discipline. */
   sessionCount: number
+  /** True when this discipline tracks distance (walking) — drives distance/pace charts. */
+  hasDistance: boolean
 }
 
 export interface Analysis {
@@ -82,13 +84,17 @@ export async function getAnalysis(ownerId: string): Promise<Analysis> {
       id: r.id,
       startDate: new Date(r.startDate as unknown as string),
       movingTimeS: r.movingTimeS,
+      distanceM: r.distanceM,
     }))
     const realCount = realRows.filter((r) => r.type === type).length
+    const weeks = computeCrossWeeklyStats(input, config)
     return {
       discipline,
       label: config.label,
-      weeks: computeCrossWeeklyStats(input, config),
+      weeks,
       sessionCount: realCount,
+      // Walking is the distance-based discipline; show it distance/pace charts.
+      hasDistance: discipline === "walking" && weeks.some((w) => w.miles > 0),
     }
   })
 

@@ -19,6 +19,8 @@
  * never invents load math.
  */
 
+import { metersToMiles } from "@/lib/units"
+
 export type Discipline = "walking" | "strength" | "yoga"
 
 export type CrossFlagDirection = "rampup" | "cutback" | "hold"
@@ -37,6 +39,8 @@ export interface CrossActivityInput {
   id: string
   startDate: Date
   movingTimeS: number
+  /** Meters covered. 0 for non-distance disciplines (strength, yoga). */
+  distanceM?: number
 }
 
 export interface CrossWeekStats {
@@ -45,6 +49,10 @@ export interface CrossWeekStats {
   minutes: number
   sessions: number
   avgSessionMin: number | null
+  /** Weekly distance in miles. 0 for non-distance disciplines. */
+  miles: number
+  /** Average pace in seconds per mile, or null when no distance was covered. */
+  avgPaceSecPerMile: number | null
   acuteMin: number
   chronicMin: number
   acwr: number | null
@@ -128,6 +136,12 @@ export function computeCrossWeeklyStats(
     const sessions = inWeek.length
     const avgSessionMin = sessions > 0 ? minutes / sessions : null
 
+    // Distance / pace (meaningful only for walking; 0 for strength & yoga).
+    const meters = inWeek.reduce((s, a) => s + (a.distanceM ?? 0), 0)
+    const miles = metersToMiles(meters)
+    const durationS = inWeek.reduce((s, a) => s + a.movingTimeS, 0)
+    const avgPaceSecPerMile = miles > 0 ? durationS / miles : null
+
     const endOfWeek = addDays(weekStart, 7)
     const acuteMin = windowMinutes(sorted, endOfWeek, 7)
     const chronicMin = windowMinutes(sorted, endOfWeek, 28) / 4
@@ -144,6 +158,8 @@ export function computeCrossWeeklyStats(
       minutes: round(minutes),
       sessions,
       avgSessionMin: avgSessionMin ? round(avgSessionMin) : null,
+      miles: round(miles, 2),
+      avgPaceSecPerMile: avgPaceSecPerMile ? Math.round(avgPaceSecPerMile) : null,
       acuteMin: round(acuteMin),
       chronicMin: round(chronicMin),
       acwr: acwr ? round(acwr, 2) : null,

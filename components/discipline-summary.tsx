@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { ChevronLeft, ChevronRight } from "lucide-react"
 import { FlagBadge, severityDot } from "@/components/flag-badge"
+import { CrossLoadCharts } from "@/components/cross-load-charts"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import type { CrossWeekStats } from "@/lib/training/cross-training"
@@ -155,7 +156,7 @@ function WeeklyTimeline({ weeks }: { weeks: CrossWeekStats[] }) {
 }
 
 export function DisciplineSummary({ analysis }: { analysis: DisciplineAnalysis }) {
-  const { weeks, sessionCount, label } = analysis
+  const { weeks, sessionCount, label, hasDistance } = analysis
 
   if (sessionCount === 0 || weeks.length === 0) {
     return (
@@ -176,6 +177,7 @@ export function DisciplineSummary({ analysis }: { analysis: DisciplineAnalysis }
   return (
     <div className="flex flex-col gap-6">
       <ThisWeeksCall label={label} week={latest} />
+      <CrossLoadCharts weeks={weeks} hasDistance={hasDistance} label={label} />
       <WeeklyTimeline weeks={weeks} />
     </div>
   )
