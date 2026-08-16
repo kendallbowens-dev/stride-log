@@ -42,6 +42,8 @@ export default async function DashboardPage() {
         targetRace: s.targetRace,
         targetRaceDate: s.targetRaceDate ? String(s.targetRaceDate) : null,
         weeklyMileageGoalMi: s.weeklyMileageGoalMi,
+        phoneNumber: s.phoneNumber,
+        smsRecapEnabled: s.smsRecapEnabled,
       }
     : null
 

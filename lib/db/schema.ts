@@ -32,6 +32,9 @@ export const settings = pgTable("settings", {
   targetRace: text("target_race"),
   targetRaceDate: date("target_race_date"),
   weeklyMileageGoalMi: doublePrecision("weekly_mileage_goal_mi"),
+  phoneNumber: text("phone_number"),
+  smsRecapEnabled: boolean("sms_recap_enabled").notNull().default(false),
+  smsLastSentAt: timestamp("sms_last_sent_at", { withTimezone: true }),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
 })
 
@@ -42,6 +45,9 @@ export const settingsBackup = pgTable("settings_backup", {
   targetRace: text("target_race"),
   targetRaceDate: date("target_race_date"),
   weeklyMileageGoalMi: doublePrecision("weekly_mileage_goal_mi"),
+  phoneNumber: text("phone_number"),
+  smsRecapEnabled: boolean("sms_recap_enabled").notNull().default(false),
+  smsLastSentAt: timestamp("sms_last_sent_at", { withTimezone: true }),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
 })
 

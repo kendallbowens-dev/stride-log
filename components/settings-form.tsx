@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Separator } from "@/components/ui/separator"
+import { Switch } from "@/components/ui/switch"
 import { Textarea } from "@/components/ui/textarea"
 import { useRouter } from "next/navigation"
 import { useState, useTransition } from "react"
@@ -16,6 +18,8 @@ interface SettingsValues {
   targetRace: string | null
   targetRaceDate: string | null
   weeklyMileageGoalMi: number | null
+  phoneNumber: string | null
+  smsRecapEnabled: boolean
 }
 
 export function SettingsForm({ initial }: { initial: SettingsValues | null }) {
@@ -26,19 +30,33 @@ export function SettingsForm({ initial }: { initial: SettingsValues | null }) {
   const [targetRace, setTargetRace] = useState(initial?.targetRace ?? "")
   const [targetRaceDate, setTargetRaceDate] = useState(initial?.targetRaceDate ?? "")
   const [goal, setGoal] = useState(initial?.weeklyMileageGoalMi?.toString() ?? "")
+  const [phoneNumber, setPhoneNumber] = useState(initial?.phoneNumber ?? "")
+  const [smsEnabled, setSmsEnabled] = useState(initial?.smsRecapEnabled ?? false)
 
   function onSubmit(e: React.FormEvent) {
     e.preventDefault()
+    if (smsEnabled && !phoneNumber.trim()) {
+      toast.error("Add a mobile number to receive weekly recap texts.")
+      return
+    }
     const input: SettingsInput = {
       injuryHistory: injuryHistory || null,
       restingHr: restingHr ? Number(restingHr) : null,
       targetRace: targetRace || null,
       targetRaceDate: targetRaceDate || null,
       weeklyMileageGoalMi: goal ? Number(goal) : null,
+      phoneNumber: phoneNumber || null,
+      smsRecapEnabled: smsEnabled,
     }
     startTransition(async () => {
-      await saveSettings(input)
-      toast.success("Baseline saved. It will inform your next log.")
+      const res = await saveSettings(input)
+      if (smsEnabled && res.phoneSaved) {
+        toast.success("Saved. You'll get a recap text every Monday.")
+      } else if (smsEnabled && !res.phoneSaved) {
+        toast.error("That number didn't look valid, so texts stay off. Check the format and try again.")
+      } else {
+        toast.success("Baseline saved. It will inform your next log.")
+      }
       router.refresh()
     })
   }
@@ -98,6 +116,46 @@ export function SettingsForm({ initial }: { initial: SettingsValues | null }) {
             <Label htmlFor="race-date">Race date</Label>
             <Input id="race-date" type="date" value={targetRaceDate} onChange={(e) => setTargetRaceDate(e.target.value)} />
           </div>
+
+          <Separator className="sm:col-span-2" />
+
+          <div className="flex flex-col gap-4 sm:col-span-2">
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex flex-col gap-1">
+                <Label htmlFor="sms-toggle" className="text-sm font-medium">
+                  Weekly recap by text
+                </Label>
+                <p className="text-sm text-muted-foreground text-pretty">
+                  Get a Monday morning SMS summarizing last week&apos;s running and cross-training, with exactly what to
+                  adjust.
+                </p>
+              </div>
+              <Switch
+                id="sms-toggle"
+                checked={smsEnabled}
+                onCheckedChange={setSmsEnabled}
+                aria-label="Enable weekly recap texts"
+              />
+            </div>
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="phone">Mobile number</Label>
+              <Input
+                id="phone"
+                type="tel"
+                inputMode="tel"
+                autoComplete="tel"
+                value={phoneNumber}
+                onChange={(e) => setPhoneNumber(e.target.value)}
+                placeholder="+1 555 123 4567"
+                disabled={!smsEnabled}
+                aria-describedby="phone-help"
+              />
+              <p id="phone-help" className="text-xs text-muted-foreground">
+                US numbers can omit the country code. Standard message rates apply; reply STOP to unsubscribe.
+              </p>
+            </div>
+          </div>
+
           <div className="sm:col-span-2">
             <Button type="submit" disabled={isPending}>
               {isPending ? "Saving…" : "Save baseline"}
