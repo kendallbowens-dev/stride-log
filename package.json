@@ -2,11 +2,20 @@
   "name": "my-project",
   "version": "0.1.0",
   "private": true,
+  "description": "Stride Log — running & cross-training load coach",
+  "author": "Stride Log",
+  "main": "electron/main.js",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "electron": "electron .",
+    "electron:dev": "concurrently -k -n next,electron -c green,cyan \"next dev\" \"wait-on tcp:3000 && electron .\"",
+    "electron:build": "electron-builder --config electron-builder.yml",
+    "electron:build:mac": "electron-builder --mac --config electron-builder.yml",
+    "electron:build:win": "electron-builder --win --config electron-builder.yml",
+    "electron:build:linux": "electron-builder --linux --config electron-builder.yml"
   },
   "dependencies": {
     "@base-ui/react": "^1.5.0",

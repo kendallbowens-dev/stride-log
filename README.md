@@ -51,6 +51,32 @@ pnpm dev
 
 Open [http://localhost:3000](http://localhost:3000).
 
+## Desktop app (Electron)
+
+Stride Log ships an optional cross-platform desktop app (macOS, Windows, Linux) built with Electron. Because the app is server-backed (Better Auth, Neon, Strava OAuth, server actions, cron), the desktop app is a **remote-URL shell**: it loads your running Next.js server rather than bundling one, so every feature works exactly as it does in the browser.
+
+### Run the desktop app in development
+
+```bash
+pnpm electron:dev
+```
+
+This starts `next dev` and, once port 3000 is up, opens the Electron window pointed at `http://localhost:3000`.
+
+### Build native installers
+
+1. Set your deployed URL: edit `DEPLOYED_URL` in [`electron/main.js`](electron/main.js) to your production Stride Log URL (or pass `ELECTRON_APP_URL` at build time).
+2. Build for one or all platforms:
+
+```bash
+pnpm electron:build         # current platform
+pnpm electron:build:mac     # macOS  → dmg + zip (arm64 + x64)
+pnpm electron:build:win     # Windows → NSIS installer + portable exe
+pnpm electron:build:linux   # Linux  → AppImage + deb
+```
+
+Artifacts are written to `dist-electron/`. Building macOS `.dmg` requires running on macOS; Windows/Linux targets can cross-build from most hosts. Native build config lives in [`electron-builder.yml`](electron-builder.yml), and the app icon is [`build/icon.png`](build/icon.png).
+
 ## Data sources
 
 - **Strava** — connect via OAuth; "Sync now" pulls the last ~180 days of runs.

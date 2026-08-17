@@ -9,12 +9,19 @@ const path = require("node:path")
 
 const isDev = !app.isPackaged
 
+// ⚠️ EDIT THIS before packaging: your deployed Stride Log URL. This is what
+// the installed desktop app loads for every end user (they cannot set env
+// vars). An ELECTRON_APP_URL env var still overrides it when set (handy for
+// dev/staging builds).
+const DEPLOYED_URL = "https://your-stride-log.vercel.app"
+
 // The URL the desktop shell points at. Precedence:
-//   1. ELECTRON_APP_URL        — explicit override (set for a packaged build)
-//   2. localhost:3000          — local `next dev`/`next start` while developing
-//   3. production fallback     — edit APP_PRODUCTION_URL to your deployed URL
-const APP_PRODUCTION_URL = process.env.ELECTRON_APP_URL || "https://example.vercel.app"
-const APP_URL = isDev ? process.env.ELECTRON_APP_URL || "http://localhost:3000" : APP_PRODUCTION_URL
+//   1. ELECTRON_APP_URL  — explicit override (dev/staging, or a custom build)
+//   2. dev               — localhost:3000 while running `next dev`/`next start`
+//   3. production        — the hardcoded DEPLOYED_URL above
+const APP_URL = isDev
+  ? process.env.ELECTRON_APP_URL || "http://localhost:3000"
+  : process.env.ELECTRON_APP_URL || DEPLOYED_URL
 
 /** @type {BrowserWindow | null} */
 let mainWindow = null
