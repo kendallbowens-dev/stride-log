@@ -58,7 +58,8 @@
   },
   "pnpm": {
     "overrides": {
-      "hono": "4.12.25"
+      "hono": "4.12.25",
+      "app-builder-lib>@noble/hashes": "1.8.0"
     }
   }
 }

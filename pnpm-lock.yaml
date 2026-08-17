@@ -6,6 +6,7 @@ settings:
 
 overrides:
   hono: 4.12.25
+  app-builder-lib>@noble/hashes: 1.8.0
 
 importers:
 
@@ -5454,7 +5455,7 @@ snapshots:
       '@electron/rebuild': 4.2.0
       '@electron/universal': 2.0.3
       '@malept/flatpak-bundler': 0.4.0
-      '@noble/hashes': 2.3.0
+      '@noble/hashes': 1.8.0
       '@peculiar/webcrypto': 1.7.1
       '@types/fs-extra': 9.0.13
       ajv: 8.20.0
