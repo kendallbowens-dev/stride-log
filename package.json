@@ -18,10 +18,16 @@
     "electron:build": "electron-builder --config electron-builder.yml",
     "electron:build:mac": "electron-builder --mac --config electron-builder.yml",
     "electron:build:win": "electron-builder --win --config electron-builder.yml",
-    "electron:build:linux": "electron-builder --linux --config electron-builder.yml"
+    "electron:build:linux": "electron-builder --linux --config electron-builder.yml",
+    "cap:add:ios": "cap add ios",
+    "cap:add:android": "cap add android",
+    "cap:sync": "cap sync",
+    "cap:open:ios": "cap open ios",
+    "cap:open:android": "cap open android"
   },
   "dependencies": {
     "@base-ui/react": "^1.5.0",
+    "@capacitor/core": "^8.5.0",
     "@neondatabase/serverless": "^1.1.0",
     "@vercel/analytics": "1.6.1",
     "ai": "^7.0.64",
@@ -45,6 +51,9 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@capacitor/android": "^8.5.0",
+    "@capacitor/cli": "^8.5.0",
+    "@capacitor/ios": "^8.5.0",
     "@tailwindcss/postcss": "^4.3.3",
     "@types/node": "^24",
     "@types/pg": "^8.21.0",
