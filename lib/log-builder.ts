@@ -12,9 +12,29 @@ function dateRange(weeks: WeekStats[]): string {
   return first && last ? `${first} → ${last}` : (last ?? "")
 }
 
-function callSentence(kind: "Mileage" | "Pace", w: WeekStats): string {
-  const flag = kind === "Mileage" ? w.mileageFlag : w.paceFlag
-  return `**${kind}:** ${directionLabel(flag.direction)} — ${flag.reason}`
+/** A short narrative summary of how the training block has trended. */
+function storyParagraph(weeks: WeekStats[]): string {
+  const current = weeks[weeks.length - 1]
+  if (weeks.length === 1) {
+    return `You've logged your first tracked week: ${current.distanceMiles} mi across ${current.sessions} runs at ${formatPace(current.avgPaceSecPerMile)}. A couple more weeks will establish the baseline the load model needs.`
+  }
+
+  const first = weeks[0]
+  const volDelta = current.distanceMiles - first.distanceMiles
+  const volTrend = volDelta > 0.5 ? "climbed" : volDelta < -0.5 ? "eased back" : "held steady"
+
+  // Pace can be missing for weeks without distance-based runs.
+  let paceClause = ""
+  if (first.avgPaceSecPerMile !== null && current.avgPaceSecPerMile !== null) {
+    const paceDelta = first.avgPaceSecPerMile - current.avgPaceSecPerMile
+    const paceTrend = paceDelta > 3 ? "sharpened" : paceDelta < -3 ? "softened" : "stayed level"
+    paceClause = ` while your average pace has ${paceTrend} to ${formatPace(current.avgPaceSecPerMile)}`
+  }
+
+  return [
+    `Over the last ${weeks.length} weeks your volume has ${volTrend} (from ${first.distanceMiles} to ${current.distanceMiles} mi/wk)${paceClause}.`,
+    `The most recent week reads **${directionLabel(current.mileageFlag.direction)}** on mileage and **${directionLabel(current.paceFlag.direction)}** on pace — ${current.mileageFlag.reason}`,
+  ].join(" ")
 }
 
 /**
@@ -26,16 +46,13 @@ export function buildRunningLog(weeks: WeekStats[], baseline: LogBaseline): stri
   const current = recent[recent.length - 1]
   const lines: string[] = []
 
-  lines.push(`# Running Log — ${dateRange(recent)}`)
-
+  // The current-week metric tiles and the week-by-week table are rendered
+  // elsewhere on the page, so the narrative log intentionally omits a
+  // "This Week's Call" summary and a per-week recap to avoid duplication.
   lines.push("")
-  lines.push("## This Week's Call")
+  lines.push("## The Story So Far")
   lines.push("")
-  lines.push(`- ${callSentence("Mileage", current)}`)
-  lines.push(`- ${callSentence("Pace", current)}`)
-  if (current.acwr !== null) {
-    lines.push(`- Acute:chronic workload ratio is **${current.acwr}** (0.8–1.3 is the sweet spot).`)
-  }
+  lines.push(storyParagraph(recent))
 
   const baselineBits = [
     baseline.targetRace ? `Target race: ${baseline.targetRace}.` : null,
@@ -46,22 +63,6 @@ export function buildRunningLog(weeks: WeekStats[], baseline: LogBaseline): stri
     lines.push("## Baseline")
     lines.push("")
     baselineBits.forEach((b) => lines.push(`- ${b}`))
-  }
-
-  lines.push("")
-  lines.push("## Weekly Log")
-  lines.push("")
-  for (const w of recent) {
-    const acwr = w.acwr !== null ? `ACWR ${w.acwr}` : "ACWR n/a"
-    const wow =
-      w.wowChangePct !== null ? `, ${w.wowChangePct > 0 ? "+" : ""}${w.wowChangePct}% vol wk/wk` : ""
-    const flags: string[] = []
-    if (w.mileageFlag.direction !== "hold") flags.push(`mileage ${directionLabel(w.mileageFlag.direction).toLowerCase()}`)
-    if (w.paceFlag.direction !== "hold") flags.push(`pace ${directionLabel(w.paceFlag.direction).toLowerCase()}`)
-    const flagText = flags.length ? ` — ${flags.join(", ")}` : ""
-    lines.push(
-      `- **${w.weekStart}**: ${w.distanceMiles} mi / ${w.sessions} runs, ${formatPace(w.avgPaceSecPerMile)}, ${acwr}${wow}${flagText}`,
-    )
   }
 
   lines.push("")

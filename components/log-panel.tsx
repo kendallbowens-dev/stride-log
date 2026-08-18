@@ -13,6 +13,25 @@ interface LogPanelProps {
   hasActivities: boolean
 }
 
+// The current-week tiles and the weekly timeline table already show this data,
+// so drop these sections from the narrative — including from older saved logs
+// that were generated before they were removed from the generator.
+const REDUNDANT_SECTIONS = ["This Week's Call", "Weekly Log"]
+
+function stripRedundantSections(md: string): string {
+  let out = md
+  for (const heading of REDUNDANT_SECTIONS) {
+    // Remove a "## Heading" block up to the next "## " heading or end of doc.
+    const escaped = heading.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
+    const re = new RegExp(`\\n?##\\s+${escaped}[\\s\\S]*?(?=\\n##\\s|$)`, "g")
+    out = out.replace(re, "")
+  }
+  // Drop the top-level "# Running Log — <date range>" title (redundant with
+  // the panel's own "Training log agent" header).
+  out = out.replace(/^#\s+Running Log[^\n]*\n?/m, "")
+  return out.trim()
+}
+
 export function LogPanel({ initialMarkdown, hasActivities }: LogPanelProps) {
   const [markdown, setMarkdown] = useState(initialMarkdown)
   const [notice, setNotice] = useState<string | null>(null)
@@ -51,7 +70,7 @@ export function LogPanel({ initialMarkdown, hasActivities }: LogPanelProps) {
             ) : null}
             <Separator className="mb-4" />
             <article className="prose-log max-w-none">
-              <ReactMarkdown>{markdown}</ReactMarkdown>
+              <ReactMarkdown>{stripRedundantSections(markdown)}</ReactMarkdown>
             </article>
           </>
         ) : (
