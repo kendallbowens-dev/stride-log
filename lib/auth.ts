@@ -35,6 +35,7 @@ export const auth = betterAuth({
           // origin must be trusted for mobile sign-in to work. These wildcards
           // cover ngrok and cloudflared quick tunnels (whose URLs change on
           // every restart) so no env var needs updating each session.
+          "https://*.ngrok-free.dev",
           "https://*.ngrok-free.app",
           "https://*.ngrok.app",
           "https://*.ngrok.io",
