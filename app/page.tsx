@@ -15,6 +15,7 @@ import { DisciplineSummary } from "@/components/discipline-summary"
 import { LogPanel } from "@/components/log-panel"
 import { AccountMenu } from "@/components/account-menu"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Footprints, PersonStanding, Dumbbell, Flower2, Settings } from "lucide-react"
 import Image from "next/image"
 
 // This dashboard reads per-request data (database state + Vercel Connect tokens),
@@ -55,9 +56,10 @@ export default async function DashboardPage() {
   const disciplineByKey = Object.fromEntries(disciplines.map((d) => [d.discipline, d]))
 
   return (
-    <main className="mx-auto flex min-h-svh w-full max-w-5xl flex-col gap-6 px-4 py-8 md:px-6 md:py-10">
-      <header className="flex flex-col gap-2">
-        <div className="flex items-center justify-between gap-2">
+    <main className="mx-auto flex min-h-svh w-full max-w-5xl flex-col gap-6 px-4 pb-[calc(env(safe-area-inset-bottom)+5.5rem)] pt-0 md:px-6 md:pb-10 md:pt-10">
+      <header className="flex flex-col gap-3 md:gap-2">
+        {/* Sticky, compact top bar on mobile; plain inline row on desktop. */}
+        <div className="sticky top-0 z-40 -mx-4 flex items-center justify-between gap-2 border-b border-border/60 bg-background/85 px-4 pb-3 pt-[calc(env(safe-area-inset-top)+0.75rem)] backdrop-blur-md md:static md:mx-0 md:border-0 md:bg-transparent md:px-0 md:pb-0 md:pt-0 md:backdrop-blur-none">
           <div className="flex items-center gap-2 text-primary">
             <Image
               src="/app-icon.png"
@@ -73,22 +75,45 @@ export default async function DashboardPage() {
           </div>
           <AccountMenu email={session.user.email} name={session.user.name} />
         </div>
-        <h1 className="text-2xl font-semibold tracking-tight text-balance md:text-3xl">
-          Training log &amp; multi-sport load coach
-        </h1>
-        <p className="max-w-2xl text-pretty text-sm leading-relaxed text-muted-foreground">
-          Pulls your Strava activities, tracks acute vs. chronic workload for each discipline, and tells you exactly
-          what to adjust — cut back, hold, or ramp up — then writes a narrative running log.
-        </p>
+        <div className="flex flex-col gap-2">
+          <h1 className="text-2xl font-semibold tracking-tight text-balance md:text-3xl">
+            Training log &amp; multi-sport load coach
+          </h1>
+          <p className="max-w-2xl text-pretty text-sm leading-relaxed text-muted-foreground">
+            Pulls your Strava activities, tracks acute vs. chronic workload for each discipline, and tells you exactly
+            what to adjust — cut back, hold, or ramp up — then writes a narrative running log.
+          </p>
+        </div>
       </header>
 
       <Tabs defaultValue="running" className="w-full">
-        <TabsList className="flex-wrap">
+        {/* Desktop: inline top tabs. */}
+        <TabsList className="hidden flex-wrap md:inline-flex">
           <TabsTrigger value="running">Running</TabsTrigger>
           <TabsTrigger value="walking">Walking</TabsTrigger>
           <TabsTrigger value="strength">Strength</TabsTrigger>
           <TabsTrigger value="yoga">Yoga</TabsTrigger>
           <TabsTrigger value="setup">Setup</TabsTrigger>
+        </TabsList>
+
+        {/* Mobile: fixed native-style bottom tab bar with icons. */}
+        <TabsList className="fixed inset-x-0 bottom-0 z-50 !h-auto !w-full items-stretch justify-around gap-0 !rounded-none border-t border-border !bg-card/95 !p-0 pb-[env(safe-area-inset-bottom)] backdrop-blur-md md:hidden">
+          {[
+            { value: "running", label: "Running", Icon: Footprints },
+            { value: "walking", label: "Walking", Icon: PersonStanding },
+            { value: "strength", label: "Strength", Icon: Dumbbell },
+            { value: "yoga", label: "Yoga", Icon: Flower2 },
+            { value: "setup", label: "Setup", Icon: Settings },
+          ].map(({ value, label, Icon }) => (
+            <TabsTrigger
+              key={value}
+              value={value}
+              className="!flex-col gap-1 !rounded-none !bg-transparent px-1 py-2.5 text-[10px] font-medium tracking-tight data-active:!bg-transparent data-active:!text-primary"
+            >
+              <Icon className="size-5" />
+              {label}
+            </TabsTrigger>
+          ))}
         </TabsList>
 
         <TabsContent value="running" className="mt-4">

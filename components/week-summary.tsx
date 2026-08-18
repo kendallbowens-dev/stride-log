@@ -85,7 +85,32 @@ export function WeeklyTimeline({ weeks }: { weeks: WeekStats[] }) {
         <CardTitle className="text-base">Weekly log</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="overflow-x-auto">
+        {/* Mobile: stacked cards — a wide table doesn't fit a phone screen. */}
+        <div className="flex flex-col gap-2 md:hidden">
+          {paged.map((w) => (
+            <div key={w.weekStart} className="rounded-lg border border-border/60 bg-muted/20 p-3">
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-muted-foreground">{w.weekStart}</span>
+                <span className="font-mono text-sm tabular-nums">{w.distanceMiles} mi</span>
+              </div>
+              <div className="mt-2 flex items-center gap-4 text-xs text-muted-foreground">
+                <span>
+                  Pace <span className="ml-0.5 font-mono tabular-nums text-foreground">{formatPace(w.avgPaceSecPerMile)}</span>
+                </span>
+                <span>
+                  ACWR <span className="ml-0.5 font-mono tabular-nums text-foreground">{w.acwr?.toFixed(2) ?? "—"}</span>
+                </span>
+              </div>
+              <div className="mt-2.5 flex flex-wrap items-center gap-2">
+                <FlagBadge direction={w.mileageFlag.direction} />
+                <FlagBadge direction={w.paceFlag.direction} />
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Desktop: full table. */}
+        <div className="hidden overflow-x-auto md:block">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-border text-left text-xs uppercase tracking-wide text-muted-foreground">

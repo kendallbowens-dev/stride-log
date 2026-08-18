@@ -32,6 +32,9 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   colorScheme: 'dark',
   themeColor: '#211f26',
+  // Draw under the iOS notch / home indicator so we can apply our own
+  // safe-area insets and get an edge-to-edge, native-feeling layout.
+  viewportFit: 'cover',
 }
 
 export default function RootLayout({
