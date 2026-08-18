@@ -15,7 +15,7 @@ import type { CapacitorConfig } from "@capacitor/cli"
  * DEPLOYED_URL is the production deployment the shipped apps load. Override it
  * with CAP_SERVER_URL only for local/staging debug builds.
  */
-const DEPLOYED_URL = "https://v0-stride-log.vercel.app"
+const DEPLOYED_URL = "https://v0-rampwise.vercel.app"
 const SERVER_URL = process.env.CAP_SERVER_URL || DEPLOYED_URL
 
 // Only relax transport security when explicitly pointing at an http:// dev

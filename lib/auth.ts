@@ -6,7 +6,7 @@ import { getPool } from "@/lib/db"
 // the auth base URL — otherwise Better Auth rejects mobile sign-in with
 // "Invalid origin", since Vercel's auto-assigned production URL differs from
 // this domain. Keep in sync with DEPLOYED_URL in capacitor.config.ts.
-const CANONICAL_APP_URL = "https://v0-stride-log.vercel.app"
+const CANONICAL_APP_URL = "https://v0-rampwise.vercel.app"
 
 export const auth = betterAuth({
   database: getPool(),

@@ -13,7 +13,7 @@ const isDev = !app.isPackaged
 // the installed desktop app loads for every end user (they cannot set env
 // vars). An ELECTRON_APP_URL env var still overrides it when set (handy for
 // dev/staging builds).
-const DEPLOYED_URL = "https://v0-stride-log.vercel.app"
+const DEPLOYED_URL = "https://v0-rampwise.vercel.app"
 
 // The URL the desktop shell points at. Precedence:
 //   1. ELECTRON_APP_URL  — explicit override (dev/staging, or a custom build)
