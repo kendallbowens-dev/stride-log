@@ -1,20 +1,36 @@
 import { betterAuth } from "better-auth"
 import { getPool } from "@/lib/db"
 
+// The canonical public URL the app is served from. The mobile apps (Capacitor
+// remote-URL shell) load this exact origin, so it MUST be trusted and used as
+// the auth base URL — otherwise Better Auth rejects mobile sign-in with
+// "Invalid origin", since Vercel's auto-assigned production URL differs from
+// this domain. Keep in sync with DEPLOYED_URL in capacitor.config.ts.
+const CANONICAL_APP_URL = "https://v0-stride-log.vercel.app"
+
 export const auth = betterAuth({
   database: getPool(),
   baseURL:
     process.env.BETTER_AUTH_URL ??
-    (process.env.VERCEL_PROJECT_PRODUCTION_URL
-      ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
-      : process.env.VERCEL_URL
-        ? `https://${process.env.VERCEL_URL}`
-        : (process.env.V0_DEV_APP_URL ?? process.env.V0_RUNTIME_URL)),
+    (process.env.NODE_ENV === "production"
+      ? CANONICAL_APP_URL
+      : (process.env.VERCEL_PROJECT_PRODUCTION_URL
+          ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
+          : process.env.VERCEL_URL
+            ? `https://${process.env.VERCEL_URL}`
+            : (process.env.V0_DEV_APP_URL ?? process.env.V0_RUNTIME_URL))),
   emailAndPassword: {
     enabled: true,
     autoSignIn: true,
   },
   trustedOrigins: [
+    // Canonical app URL — the origin the mobile shells load. Always trusted so
+    // sign-in works from the iOS/Android apps and the web deployment alike.
+    CANONICAL_APP_URL,
+    // Capacitor native WebView origins. If a build ever serves local content
+    // instead of the remote URL, requests originate from these schemes.
+    "capacitor://localhost",
+    "https://localhost",
     ...(process.env.V0_DEV_APP_URL ? [process.env.V0_DEV_APP_URL] : []),
     ...(process.env.V0_RUNTIME_URL ? [process.env.V0_RUNTIME_URL] : []),
     ...(process.env.VERCEL_URL ? [`https://${process.env.VERCEL_URL}`] : []),
