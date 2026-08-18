@@ -1,8 +1,8 @@
 import type { CapacitorConfig } from "@capacitor/cli"
 
 /**
- * ⚠️ EDIT THIS before building the mobile apps: your deployed Overreach URL.
- * Because Overreach is server-backed (Better Auth, Neon, Strava OAuth, server
+ * ⚠️ EDIT THIS before building the mobile apps: your deployed RampWise URL.
+ * Because RampWise is server-backed (Better Auth, Neon, Strava OAuth, server
  * actions, cron), the mobile apps are a REMOTE-URL SHELL — they load your live
  * deployment rather than bundling a server, so every feature works unchanged.
  *
@@ -24,7 +24,7 @@ const isCleartext = SERVER_URL.startsWith("http://")
 
 const config: CapacitorConfig = {
   appId: "app.stridelog.mobile",
-  appName: "Overreach",
+  appName: "RampWise",
   // Required by the CLI even for a remote-URL shell; holds the tiny offline
   // fallback page in `public/mobile-shell`, not the real app.
   webDir: "public/mobile-shell",

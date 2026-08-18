@@ -9,7 +9,7 @@ const path = require("node:path")
 
 const isDev = !app.isPackaged
 
-// ⚠️ EDIT THIS before packaging: your deployed Overreach URL. This is what
+// ⚠️ EDIT THIS before packaging: your deployed RampWise URL. This is what
 // the installed desktop app loads for every end user (they cannot set env
 // vars). An ELECTRON_APP_URL env var still overrides it when set (handy for
 // dev/staging builds).

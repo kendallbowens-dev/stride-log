@@ -63,7 +63,7 @@ export default async function DashboardPage() {
           <div className="flex items-center gap-2 text-primary">
             <Image
               src="/app-icon.png"
-              alt="Overreach logo"
+              alt="RampWise logo"
               width={28}
               height={28}
               priority
