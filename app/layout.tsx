@@ -1,6 +1,7 @@
 import { Analytics } from '@vercel/analytics/next'
 import type { Metadata, Viewport } from 'next'
 import { Geist, Geist_Mono } from 'next/font/google'
+import { SplashScreen } from '@/components/splash-screen'
 import { Toaster } from '@/components/ui/sonner'
 import './globals.css'
 
@@ -46,6 +47,7 @@ export default function RootLayout({
     <html lang="en" className={`dark ${geistSans.variable} ${geistMono.variable}`} suppressHydrationWarning>
       <body className="bg-background font-sans antialiased" suppressHydrationWarning>
         {children}
+        <SplashScreen />
         <Toaster />
         {process.env.NODE_ENV === 'production' && <Analytics />}
       </body>
