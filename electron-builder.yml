@@ -1,0 +1,62 @@
+# electron-builder configuration — produces native installers for macOS,
+# Windows, and Linux. Because this is a remote-URL shell, only the Electron
+# process files are packaged (the Next.js app is served remotely), which keeps
+# the artifacts small.
+appId: com.stridelog.desktop
+productName: Stride Log
+copyright: Copyright © 2026
+
+directories:
+  output: dist-electron
+  buildResources: build
+
+# Only ship the desktop shell — not the whole Next.js repo.
+files:
+  - electron/**/*
+  - package.json
+
+# macOS — universal dmg + zip for auto-update friendliness.
+mac:
+  category: public.app-category.healthcare-fitness
+  target:
+    - target: dmg
+      arch:
+        - arm64
+        - x64
+    - target: zip
+      arch:
+        - arm64
+        - x64
+  hardenedRuntime: true
+  gatekeeperAssess: false
+
+dmg:
+  title: ${productName}
+
+# Windows — NSIS installer + portable exe.
+win:
+  target:
+    - target: nsis
+      arch:
+        - x64
+    - target: portable
+      arch:
+        - x64
+
+nsis:
+  oneClick: false
+  perMachine: false
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+
+# Linux — AppImage (universal) + deb.
+linux:
+  category: Health
+  target:
+    - target: AppImage
+      arch:
+        - x64
+    - target: deb
+      arch:
+        - x64

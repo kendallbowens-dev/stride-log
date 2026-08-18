@@ -2,14 +2,32 @@
   "name": "my-project",
   "version": "0.1.0",
   "private": true,
+  "description": "Stride Log — running & cross-training load coach",
+  "author": "Stride Log",
+  "main": "electron/main.js",
+  "engines": {
+    "node": ">=20.19.0 <21 || >=22.12.0"
+  },
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "electron": "electron .",
+    "electron:dev": "concurrently -k -n next,electron -c green,cyan \"next dev\" \"wait-on tcp:3000 && electron .\"",
+    "electron:build": "electron-builder --config electron-builder.yml",
+    "electron:build:mac": "electron-builder --mac --config electron-builder.yml",
+    "electron:build:win": "electron-builder --win --config electron-builder.yml",
+    "electron:build:linux": "electron-builder --linux --config electron-builder.yml",
+    "cap:add:ios": "cap add ios",
+    "cap:add:android": "cap add android",
+    "cap:sync": "cap sync",
+    "cap:open:ios": "cap open ios",
+    "cap:open:android": "cap open android"
   },
   "dependencies": {
     "@base-ui/react": "^1.5.0",
+    "@capacitor/core": "^8.5.0",
     "@neondatabase/serverless": "^1.1.0",
     "@vercel/analytics": "1.6.1",
     "ai": "^7.0.64",
@@ -33,19 +51,29 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@capacitor/android": "^8.5.0",
+    "@capacitor/assets": "^3.0.5",
+    "@capacitor/cli": "^8.5.0",
+    "@capacitor/ios": "^8.5.0",
     "@tailwindcss/postcss": "^4.3.3",
     "@types/node": "^24",
     "@types/pg": "^8.21.0",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "concurrently": "^10.0.5",
     "drizzle-kit": "^0.31.10",
+    "electron": "^43.4.0",
+    "electron-builder": "^26.15.3",
     "postcss": "^8.5",
     "tailwindcss": "^4.3.3",
-    "typescript": "5.7.3"
+    "typescript": "5.7.3",
+    "wait-on": "^9.1.0"
   },
   "pnpm": {
     "overrides": {
-      "hono": "4.12.25"
+      "hono": "4.12.25",
+      "app-builder-lib>@noble/hashes": "1.8.0",
+      "electron>@electron/get": "3.1.0"
     }
   }
 }

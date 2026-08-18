@@ -12,6 +12,21 @@ export const metadata: Metadata = {
   description:
     'An agent that turns your Runna/Strava runs into a training log and flags when to cut back or ramp up on pace and mileage.',
   generator: 'v0.app',
+  applicationName: 'Stride Log',
+  manifest: '/manifest.webmanifest',
+  icons: {
+    icon: [
+      { url: '/icons/icon-192.webp', sizes: '192x192', type: 'image/webp' },
+      { url: '/icons/icon-512.webp', sizes: '512x512', type: 'image/webp' },
+      { url: '/app-icon.png', sizes: '1024x1024', type: 'image/png' },
+    ],
+    apple: [{ url: '/app-icon.png', sizes: '1024x1024', type: 'image/png' }],
+  },
+  appleWebApp: {
+    capable: true,
+    title: 'Stride Log',
+    statusBarStyle: 'black-translucent',
+  },
 }
 
 export const viewport: Viewport = {

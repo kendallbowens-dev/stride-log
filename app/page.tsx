@@ -15,7 +15,7 @@ import { DisciplineSummary } from "@/components/discipline-summary"
 import { LogPanel } from "@/components/log-panel"
 import { AccountMenu } from "@/components/account-menu"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Activity } from "lucide-react"
+import Image from "next/image"
 
 // This dashboard reads per-request data (database state + Vercel Connect tokens),
 // so it must render at request time rather than being prerendered at build time.
@@ -59,7 +59,14 @@ export default async function DashboardPage() {
       <header className="flex flex-col gap-2">
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-2 text-primary">
-            <Activity className="size-5" />
+            <Image
+              src="/app-icon.png"
+              alt="Stride Log logo"
+              width={28}
+              height={28}
+              priority
+              className="size-7 rounded-lg ring-1 ring-border"
+            />
             <span className="font-mono text-xs uppercase tracking-[0.2em] text-muted-foreground">
               Pace &amp; Load Agent
             </span>
