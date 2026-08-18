@@ -27,7 +27,7 @@ export default async function DashboardPage() {
   if (!session?.user) redirect("/sign-in")
   const ownerId = session.user.id
 
-  const [{ weeks, activityCount, totalCount, hasRealData, disciplines }, strava, latestLog, settingsRows] =
+  const [{ weeks, activityCount, totalCount, hasRealData, runWorkouts, disciplines }, strava, latestLog, settingsRows] =
     await Promise.all([
       getAnalysis(ownerId),
       getStravaStatus(),
@@ -119,10 +119,10 @@ export default async function DashboardPage() {
         <TabsContent value="running" className="mt-4">
           {hasData ? (
             <div className="flex flex-col gap-6">
-              <ThisWeeksCall week={currentWeek} />
+              <ThisWeeksCall week={currentWeek} workouts={runWorkouts} />
               <LoadCharts weeks={weeks} />
               <LogPanel initialMarkdown={latestLog?.generatedMarkdown ?? null} hasActivities={activityCount > 0} />
-              <WeeklyTimeline weeks={weeks} />
+              <WeeklyTimeline weeks={weeks} workouts={runWorkouts} />
             </div>
           ) : (
             <div className="rounded-xl border border-dashed border-border bg-card/40 p-8 text-center">
