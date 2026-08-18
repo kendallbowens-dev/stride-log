@@ -52,6 +52,7 @@
   },
   "devDependencies": {
     "@capacitor/android": "^8.5.0",
+    "@capacitor/assets": "^3.0.5",
     "@capacitor/cli": "^8.5.0",
     "@capacitor/ios": "^8.5.0",
     "@tailwindcss/postcss": "^4.3.3",
@@ -76,7 +77,8 @@
     },
     "onlyBuiltDependencies": [
       "electron",
-      "esbuild"
+      "esbuild",
+      "sharp"
     ]
   }
 }
