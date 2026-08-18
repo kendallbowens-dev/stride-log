@@ -16,7 +16,7 @@ import type { CapacitorConfig } from "@capacitor/cli"
  * the default is http://localhost:3000, which works out of the box on the iOS
  * Simulator (and, via 10.0.2.2, needs the env override on the Android emulator).
  */
-const DEPLOYED_URL = "http://localhost:3000"
+const DEPLOYED_URL = "https://v0-stride-log.vercel.app"
 const SERVER_URL = process.env.CAP_SERVER_URL || DEPLOYED_URL
 
 const config: CapacitorConfig = {
