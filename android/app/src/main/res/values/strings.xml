@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
-    <string name="app_name">Stride Log</string>
-    <string name="title_activity_main">Stride Log</string>
+    <string name="app_name">LoadWise</string>
+    <string name="title_activity_main">LoadWise</string>
     <string name="package_name">app.stridelog.mobile</string>
     <string name="custom_url_scheme">app.stridelog.mobile</string>
 </resources>
