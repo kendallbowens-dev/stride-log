@@ -43,7 +43,7 @@ export function SplashScreen() {
         width={96}
         height={96}
         priority
-        className="size-24 rounded-2xl shadow-lg ring-1 ring-border transition-all duration-700 ease-out"
+        className="size-24 transition-all duration-700 ease-out"
         style={{
           opacity: phase === "pending" ? 0 : 1,
           transform: phase === "pending" ? "scale(0.94)" : "scale(1)",
