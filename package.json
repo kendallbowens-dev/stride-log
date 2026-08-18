@@ -2,8 +2,8 @@
   "name": "my-project",
   "version": "0.1.0",
   "private": true,
-  "description": "Stride Log — running & cross-training load coach",
-  "author": "Stride Log",
+  "description": "Overreach — running & cross-training load coach",
+  "author": "Overreach",
   "main": "electron/main.js",
   "engines": {
     "node": ">=20.19.0 <21 || >=22.12.0"

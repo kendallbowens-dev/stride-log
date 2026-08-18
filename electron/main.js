@@ -9,11 +9,11 @@ const path = require("node:path")
 
 const isDev = !app.isPackaged
 
-// ⚠️ EDIT THIS before packaging: your deployed Stride Log URL. This is what
+// ⚠️ EDIT THIS before packaging: your deployed Overreach URL. This is what
 // the installed desktop app loads for every end user (they cannot set env
 // vars). An ELECTRON_APP_URL env var still overrides it when set (handy for
 // dev/staging builds).
-const DEPLOYED_URL = "https://your-stride-log.vercel.app"
+const DEPLOYED_URL = "https://v0-stride-log.vercel.app"
 
 // The URL the desktop shell points at. Precedence:
 //   1. ELECTRON_APP_URL  — explicit override (dev/staging, or a custom build)

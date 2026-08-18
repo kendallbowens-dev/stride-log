@@ -9,11 +9,11 @@ const geistSans = Geist({ subsets: ['latin'], variable: '--font-geist-sans' })
 const geistMono = Geist_Mono({ subsets: ['latin'], variable: '--font-geist-mono' })
 
 export const metadata: Metadata = {
-  title: 'LoadWise — Running Load Agent',
+  title: 'Overreach — Running Load Agent',
   description:
     'An agent that turns your Runna/Strava runs into a training log and flags when to cut back or ramp up on pace and mileage.',
   generator: 'v0.app',
-  applicationName: 'LoadWise',
+  applicationName: 'Overreach',
   manifest: '/manifest.webmanifest',
   icons: {
     icon: [
@@ -25,7 +25,7 @@ export const metadata: Metadata = {
   },
   appleWebApp: {
     capable: true,
-    title: 'LoadWise',
+    title: 'Overreach',
     statusBarStyle: 'black-translucent',
   },
 }

@@ -3,7 +3,7 @@
 # process files are packaged (the Next.js app is served remotely), which keeps
 # the artifacts small.
 appId: com.stridelog.desktop
-productName: Stride Log
+productName: Overreach
 copyright: Copyright © 2026
 
 directories:

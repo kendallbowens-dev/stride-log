@@ -1,11 +1,11 @@
 import type { MetadataRoute } from "next"
 
-// Web app manifest — makes LoadWise installable as a PWA and provides the
+// Web app manifest — makes Overreach installable as a PWA and provides the
 // branded icons used by the mobile home screen when "Add to Home Screen" is used.
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "LoadWise",
-    short_name: "LoadWise",
+    name: "Overreach",
+    short_name: "Overreach",
     description:
       "Turn your Strava runs into a training log and multi-sport load coach that tells you when to cut back or ramp up.",
     start_url: "/",
