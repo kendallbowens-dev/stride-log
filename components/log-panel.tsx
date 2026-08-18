@@ -26,6 +26,9 @@ function stripRedundantSections(md: string): string {
     const re = new RegExp(`\\n?##\\s+${escaped}[\\s\\S]*?(?=\\n##\\s|$)`, "g")
     out = out.replace(re, "")
   }
+  // Drop the top-level "# Running Log — <date range>" title (redundant with
+  // the panel's own "Training log agent" header).
+  out = out.replace(/^#\s+Running Log[^\n]*\n?/m, "")
   return out.trim()
 }
 
