@@ -12,12 +12,15 @@ import type { CapacitorConfig } from "@capacitor/cli"
  *   Android emulator ....... CAP_SERVER_URL="http://10.0.2.2:3000"  pnpm cap:sync
  *   Physical phone (LAN) ... CAP_SERVER_URL="http://192.168.1.10:3000" pnpm cap:sync
  *
- * Set DEPLOYED_URL to your real production URL for release builds. Until then
- * the default is http://localhost:3000, which works out of the box on the iOS
- * Simulator (and, via 10.0.2.2, needs the env override on the Android emulator).
+ * DEPLOYED_URL is the production deployment the shipped apps load. Override it
+ * with CAP_SERVER_URL only for local/staging debug builds.
  */
 const DEPLOYED_URL = "https://v0-stride-log.vercel.app"
 const SERVER_URL = process.env.CAP_SERVER_URL || DEPLOYED_URL
+
+// Only relax transport security when explicitly pointing at an http:// dev
+// server. Production (https) stays locked down.
+const isCleartext = SERVER_URL.startsWith("http://")
 
 const config: CapacitorConfig = {
   appId: "app.stridelog.mobile",
@@ -27,16 +30,15 @@ const config: CapacitorConfig = {
   webDir: "public/mobile-shell",
   server: {
     url: SERVER_URL,
-    // Allow the WebView to navigate your own domain(s). Cleartext is enabled
-    // only so a LAN dev server over http:// works; production uses https.
-    cleartext: true,
+    // Cleartext only for an http:// dev override; production (https) is locked.
+    cleartext: isCleartext,
   },
   ios: {
     contentInset: "always",
   },
   android: {
-    // Let the Strava OAuth redirect + your API calls resolve normally.
-    allowMixedContent: true,
+    // Only permit mixed content for an http:// dev override.
+    allowMixedContent: isCleartext,
   },
 }
 
