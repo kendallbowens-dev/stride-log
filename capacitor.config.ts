@@ -7,9 +7,16 @@ import type { CapacitorConfig } from "@capacitor/cli"
  * deployment rather than bundling a server, so every feature works unchanged.
  *
  * An env var (CAP_SERVER_URL) overrides it, handy for pointing a debug build at
- * a staging deployment or a LAN dev server (e.g. http://192.168.1.10:3000).
+ * a staging deployment or a LAN dev server. Examples:
+ *   iOS Simulator .......... CAP_SERVER_URL="http://localhost:3000" pnpm cap:sync
+ *   Android emulator ....... CAP_SERVER_URL="http://10.0.2.2:3000"  pnpm cap:sync
+ *   Physical phone (LAN) ... CAP_SERVER_URL="http://192.168.1.10:3000" pnpm cap:sync
+ *
+ * Set DEPLOYED_URL to your real production URL for release builds. Until then
+ * the default is http://localhost:3000, which works out of the box on the iOS
+ * Simulator (and, via 10.0.2.2, needs the env override on the Android emulator).
  */
-const DEPLOYED_URL = "https://your-stride-log.vercel.app"
+const DEPLOYED_URL = "http://localhost:3000"
 const SERVER_URL = process.env.CAP_SERVER_URL || DEPLOYED_URL
 
 const config: CapacitorConfig = {
