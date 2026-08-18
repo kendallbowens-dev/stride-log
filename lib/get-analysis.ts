@@ -9,6 +9,8 @@ import {
   type CrossWeekStats,
   type Discipline,
 } from "@/lib/training/cross-training"
+import type { WorkoutItem, WorkoutKind } from "@/lib/training/workout-insights"
+import { metersToMiles } from "@/lib/units"
 import { asc, eq } from "drizzle-orm"
 
 /** Strava/canonical activity types that count as a run. */
@@ -28,6 +30,8 @@ export interface DisciplineAnalysis {
   sessionCount: number
   /** True when this discipline tracks distance (walking) — drives distance/pace charts. */
   hasDistance: boolean
+  /** Individual sessions of this discipline, for the per-week detail view. */
+  workouts: WorkoutItem[]
 }
 
 export interface Analysis {
@@ -39,8 +43,29 @@ export interface Analysis {
   /** True when at least one non-sample run (Strava / CSV) is present. */
   hasRealData: boolean
   baseline: TrainingBaseline
+  /** Individual runs, for the per-week detail view. */
+  runWorkouts: WorkoutItem[]
   /** Per-discipline cross-training analysis (walking, strength, yoga). */
   disciplines: DisciplineAnalysis[]
+}
+
+/** Flatten a DB activity row into a serializable WorkoutItem. */
+function toWorkoutItem(
+  r: { id: string; name: string | null; startDate: unknown; distanceM: number; movingTimeS: number; avgHr: number | null },
+  kind: WorkoutKind,
+): WorkoutItem {
+  const distanceMiles = metersToMiles(r.distanceM)
+  const durationMin = r.movingTimeS / 60
+  return {
+    id: r.id,
+    name: r.name,
+    kind,
+    startDate: new Date(r.startDate as string).toISOString(),
+    distanceMiles: Math.round(distanceMiles * 100) / 100,
+    durationMin: Math.round(durationMin),
+    avgHr: r.avgHr ? Math.round(r.avgHr) : null,
+    paceSecPerMile: distanceMiles > 0 ? Math.round(r.movingTimeS / distanceMiles) : null,
+  }
 }
 
 export async function getAnalysis(ownerId: string): Promise<Analysis> {
@@ -71,6 +96,7 @@ export async function getAnalysis(ownerId: string): Promise<Analysis> {
     avgHr: r.avgHr,
   }))
   const weeks = computeWeeklyStats(runInput, baseline)
+  const runWorkouts = runRows.map((r) => toWorkoutItem(r, "run"))
 
   // Running activity count for headline/empty-state parity with prior behavior.
   const realRunCount = realRows.filter((r) => RUN_TYPES.has(r.type ?? "Run")).length
@@ -88,6 +114,7 @@ export async function getAnalysis(ownerId: string): Promise<Analysis> {
     }))
     const realCount = realRows.filter((r) => r.type === type).length
     const weeks = computeCrossWeeklyStats(input, config)
+    const workouts = disciplineRows.map((r) => toWorkoutItem(r, discipline))
     return {
       discipline,
       label: config.label,
@@ -95,6 +122,7 @@ export async function getAnalysis(ownerId: string): Promise<Analysis> {
       sessionCount: realCount,
       // Walking is the distance-based discipline; show it distance/pace charts.
       hasDistance: discipline === "walking" && weeks.some((w) => w.miles > 0),
+      workouts,
     }
   })
 
@@ -104,6 +132,7 @@ export async function getAnalysis(ownerId: string): Promise<Analysis> {
     totalCount: rows.length,
     hasRealData: realRunCount > 0,
     baseline,
+    runWorkouts,
     disciplines,
   }
 }

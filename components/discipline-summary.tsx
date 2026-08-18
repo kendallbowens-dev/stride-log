@@ -1,13 +1,15 @@
 "use client"
 
-import { useState } from "react"
-import { ChevronLeft, ChevronRight } from "lucide-react"
+import { useMemo, useState } from "react"
+import { ChevronLeft, ChevronRight, ChevronRight as ChevronRightIcon } from "lucide-react"
 import { FlagBadge, severityDot } from "@/components/flag-badge"
 import { CrossLoadCharts } from "@/components/cross-load-charts"
+import { WeekDetailDialog } from "@/components/week-detail-dialog"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import type { CrossWeekStats } from "@/lib/training/cross-training"
 import type { DisciplineAnalysis } from "@/lib/get-analysis"
+import { isoWeekStartYmd, type WorkoutItem } from "@/lib/training/workout-insights"
 import { cn } from "@/lib/utils"
 
 const PAGE_SIZE = 10
@@ -84,17 +86,32 @@ function ThisWeeksCall({ label, week }: { label: string; week: CrossWeekStats })
   )
 }
 
-function WeeklyTimeline({ weeks }: { weeks: CrossWeekStats[] }) {
+function WeeklyTimeline({
+  weeks,
+  label,
+  workouts,
+}: {
+  weeks: CrossWeekStats[]
+  label: string
+  workouts: WorkoutItem[]
+}) {
   const reversed = [...weeks].reverse()
   const pageCount = Math.max(1, Math.ceil(reversed.length / PAGE_SIZE))
   const [page, setPage] = useState(0)
+  const [selected, setSelected] = useState<CrossWeekStats | null>(null)
   const clampedPage = Math.min(page, pageCount - 1)
   const paged = reversed.slice(clampedPage * PAGE_SIZE, clampedPage * PAGE_SIZE + PAGE_SIZE)
+
+  const selectedWorkouts = useMemo(
+    () => (selected ? workouts.filter((w) => isoWeekStartYmd(w.startDate) === selected.weekStart) : []),
+    [workouts, selected],
+  )
 
   return (
     <Card>
       <CardHeader>
         <CardTitle className="text-base">Weekly log</CardTitle>
+        <p className="text-xs text-muted-foreground">Tap any week to see its individual sessions and tips.</p>
       </CardHeader>
       <CardContent>
         <div className="overflow-x-auto">
@@ -105,24 +122,51 @@ function WeeklyTimeline({ weeks }: { weeks: CrossWeekStats[] }) {
                 <th className="pb-2 pr-4 font-medium tabular-nums">Time</th>
                 <th className="pb-2 pr-4 font-medium tabular-nums">Sessions</th>
                 <th className="pb-2 pr-4 font-medium tabular-nums">ACWR</th>
-                <th className="pb-2 font-medium">Call</th>
+                <th className="pb-2 pr-4 font-medium">Call</th>
+                <th className="pb-2 font-medium sr-only">Open</th>
               </tr>
             </thead>
             <tbody>
               {paged.map((w) => (
-                <tr key={w.weekStart} className="border-b border-border/50 last:border-0">
+                <tr
+                  key={w.weekStart}
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => setSelected(w)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault()
+                      setSelected(w)
+                    }
+                  }}
+                  className="cursor-pointer border-b border-border/50 transition-colors last:border-0 hover:bg-muted/40 focus-visible:bg-muted/40 focus-visible:outline-none"
+                >
                   <td className="py-2.5 pr-4 whitespace-nowrap text-muted-foreground">{w.weekStart}</td>
                   <td className="py-2.5 pr-4 font-mono tabular-nums">{formatMinutes(w.minutes)}</td>
                   <td className="py-2.5 pr-4 font-mono tabular-nums">{w.sessions}</td>
                   <td className="py-2.5 pr-4 font-mono tabular-nums">{w.acwr?.toFixed(2) ?? "—"}</td>
-                  <td className="py-2.5">
+                  <td className="py-2.5 pr-4">
                     <FlagBadge direction={w.flag.direction} />
+                  </td>
+                  <td className="py-2.5 text-right">
+                    <ChevronRightIcon className="inline size-4 text-muted-foreground" />
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
+
+        {selected ? (
+          <WeekDetailDialog
+            open={selected !== null}
+            onOpenChange={(o) => !o && setSelected(null)}
+            label={label}
+            weekStart={selected.weekStart}
+            weekEnd={selected.weekEnd}
+            workouts={selectedWorkouts}
+          />
+        ) : null}
         {pageCount > 1 ? (
           <div className="mt-4 flex items-center justify-between">
             <span className="text-xs text-muted-foreground">
@@ -156,7 +200,7 @@ function WeeklyTimeline({ weeks }: { weeks: CrossWeekStats[] }) {
 }
 
 export function DisciplineSummary({ analysis }: { analysis: DisciplineAnalysis }) {
-  const { weeks, sessionCount, label, hasDistance } = analysis
+  const { weeks, sessionCount, label, hasDistance, workouts } = analysis
 
   if (sessionCount === 0 || weeks.length === 0) {
     return (
@@ -178,7 +222,7 @@ export function DisciplineSummary({ analysis }: { analysis: DisciplineAnalysis }
     <div className="flex flex-col gap-6">
       <ThisWeeksCall label={label} week={latest} />
       <CrossLoadCharts weeks={weeks} hasDistance={hasDistance} label={label} />
-      <WeeklyTimeline weeks={weeks} />
+      <WeeklyTimeline weeks={weeks} label={label} workouts={workouts} />
     </div>
   )
 }
