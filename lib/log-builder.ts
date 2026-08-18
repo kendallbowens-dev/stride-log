@@ -46,8 +46,6 @@ export function buildRunningLog(weeks: WeekStats[], baseline: LogBaseline): stri
   const current = recent[recent.length - 1]
   const lines: string[] = []
 
-  lines.push(`# Running Log — ${dateRange(recent)}`)
-
   // The current-week metric tiles and the week-by-week table are rendered
   // elsewhere on the page, so the narrative log intentionally omits a
   // "This Week's Call" summary and a per-week recap to avoid duplication.

@@ -60,7 +60,6 @@ export async function generateRunningLog() {
     "The app already displays the current week's metric tiles (time, sessions, ACWR, week-over-week change, load status, and the adjustment call) and a full week-by-week table elsewhere on the page.",
     "Do NOT restate those: no per-week recap list and no 'this week's call' metric summary. Focus on narrative and guidance the tiles can't convey.",
     "Structure the output exactly as:",
-    "# Running Log — <date range>",
     "## The Story So Far  (2-3 short paragraphs summarizing how the block has progressed and what the trend means)",
     "## Recommendations For Next Week  (3-5 concrete, actionable bullets on pace and mileage)",
     "All distances are in miles and all paces are per mile. Never use kilometers.",
