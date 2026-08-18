@@ -147,8 +147,15 @@
   * {
     @apply border-border outline-ring/50;
   }
+  html {
+    /* Remove the grey flash when tapping controls in the mobile WebView. */
+    -webkit-tap-highlight-color: transparent;
+  }
   body {
     @apply bg-background text-foreground;
+    /* Prevent the rubber-band scroll/pull-to-refresh bounce so the wrapped
+       app feels like a native screen rather than a web page. */
+    overscroll-behavior-y: none;
   }
 }
 
