@@ -28,6 +28,13 @@ export const auth = betterAuth({
     ...(process.env.NODE_ENV === "development"
       ? ["http://localhost:3000", "https://*.vercel.run", "https://*.v0.build"]
       : []),
+    // HTTPS tunnel (ngrok/cloudflared) used to reach the local dev server from
+    // a mobile simulator/device. Secure cookies require HTTPS, so the tunnel
+    // origin must be trusted for mobile sign-in to work. Dev-only; set
+    // DEV_TUNNEL_URL to the full https origin, e.g. https://abc123.ngrok.app
+    ...(process.env.NODE_ENV === "development" && process.env.DEV_TUNNEL_URL
+      ? [process.env.DEV_TUNNEL_URL]
+      : []),
   ],
   session: {
     expiresIn: 60 * 60 * 24 * 7, // 7 days
