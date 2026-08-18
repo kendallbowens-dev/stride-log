@@ -73,11 +73,12 @@ export function ThisWeeksCall({ week }: { week: WeekStats }) {
 }
 
 export function WeeklyTimeline({ weeks }: { weeks: WeekStats[] }) {
-  const reversed = [...weeks].reverse()
-  const pageCount = Math.max(1, Math.ceil(reversed.length / PAGE_SIZE))
+  // Newest week first (descending by week start date).
+  const sorted = [...weeks].sort((a, b) => b.weekStart.localeCompare(a.weekStart))
+  const pageCount = Math.max(1, Math.ceil(sorted.length / PAGE_SIZE))
   const [page, setPage] = useState(0)
   const clampedPage = Math.min(page, pageCount - 1)
-  const paged = reversed.slice(clampedPage * PAGE_SIZE, clampedPage * PAGE_SIZE + PAGE_SIZE)
+  const paged = sorted.slice(clampedPage * PAGE_SIZE, clampedPage * PAGE_SIZE + PAGE_SIZE)
 
   return (
     <Card>
