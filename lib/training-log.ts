@@ -58,6 +58,55 @@ function buildCoachNote(current: WeekStats): string {
   return `${opener} Looking at your load, ${advice}${pace}`
 }
 
+export interface CoachMessage {
+  role: "user" | "assistant"
+  content: string
+}
+
+export type CoachReplyResult = { ok: true; reply: string } | { ok: false; error: string }
+
+/** Answers a follow-up question about the athlete's training, grounded in their weekly data. */
+export async function replyToCoachForOwner(
+  ownerId: string,
+  coachNote: string | null,
+  messages: CoachMessage[],
+): Promise<CoachReplyResult> {
+  const { weeks, baseline, activityCount } = await getAnalysis(ownerId)
+  if (activityCount === 0 || weeks.length === 0) {
+    return { ok: false, error: "Load some activities first so your coach has something to go on." }
+  }
+
+  const { context, baselineLine, current } = buildContext(weeks, baseline)
+
+  const system = [
+    "You are the athlete's running coach, chatting with them by text about their training.",
+    "You are given per-week statistics and pre-computed cut-back / ramp-up flags derived from an acute:chronic workload ratio (ACWR) and pace/heart-rate trends.",
+    "The numbers and flag directions are the source of truth: NEVER contradict them or invent values not present. If the data can't answer a question, say so plainly.",
+    "Reply in second person like a friendly coach texting back: warm, plain, honest. Keep it SHORT: 1-3 sentences, under 60 words.",
+    "No headings, bullet lists, or tables. Avoid jargon like 'ACWR' unless explaining it in plain words.",
+    "You are not a doctor: for pain, injury, or medical questions, give general guidance and suggest seeing a professional.",
+    "All distances are in miles and all paces are per mile. Never use kilometers.",
+    "",
+    baselineLine ? `Athlete context: ${baselineLine}` : "",
+    `Most recent week starts ${current.weekStart}.`,
+    "Weekly data (oldest to newest):",
+    context,
+    coachNote ? `\nYour last check-in message to the athlete:\n${coachNote}` : "",
+  ]
+    .filter((line) => line !== "")
+    .join("\n")
+
+  try {
+    const { text } = await generateText({ model: MODEL, system, messages })
+    const reply = text.trim()
+    if (!reply) return { ok: false, error: "Your coach didn't have a reply. Try asking another way." }
+    return { ok: true, reply }
+  } catch (err) {
+    console.error("Coach reply failed:", err instanceof Error ? err.message : err)
+    return { ok: false, error: "Your coach is unavailable right now. Try again in a moment." }
+  }
+}
+
 export type GenerateLogResult =
   | { ok: true; markdown: string; weekStart: string; source: "ai" | "algorithm"; notice?: string }
   | { ok: false; error: string }
