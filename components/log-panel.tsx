@@ -35,6 +35,13 @@ function stripRedundantSections(md: string): string {
 export function LogPanel({ initialMarkdown, hasActivities }: LogPanelProps) {
   const [markdown, setMarkdown] = useState(initialMarkdown)
   const [notice, setNotice] = useState<string | null>(null)
+  // Pick up logs regenerated in the background (auto-refresh / cron) after a router refresh.
+  const [prevInitial, setPrevInitial] = useState(initialMarkdown)
+  if (initialMarkdown !== prevInitial) {
+    setPrevInitial(initialMarkdown)
+    setMarkdown(initialMarkdown)
+    setNotice(null)
+  }
   const [isGenerating, startGenerate] = useTransition()
 
   function handleGenerate() {

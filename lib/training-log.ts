@@ -1,0 +1,126 @@
+import "server-only"
+
+import { db } from "@/lib/db"
+import { logEntries } from "@/lib/db/schema"
+import { getAnalysis } from "@/lib/get-analysis"
+import type { WeekStats } from "@/lib/training/algorithm"
+import { directionLabel, formatPace } from "@/lib/format"
+import { buildRunningLog } from "@/lib/log-builder"
+import { generateText } from "ai"
+import { desc, eq } from "drizzle-orm"
+
+const MODEL = "openai/gpt-5.2"
+
+function buildContext(
+  weeks: WeekStats[],
+  baseline: { targetRace?: string | null; weeklyMileageGoalMiles?: number | null },
+) {
+  const recent = weeks.slice(-12)
+  const lines = recent.map((w) => {
+    return [
+      `Week of ${w.weekStart}:`,
+      `${w.distanceMiles} mi over ${w.sessions} runs`,
+      `avg pace ${formatPace(w.avgPaceSecPerMile)}`,
+      w.avgHr ? `avg HR ${w.avgHr}` : null,
+      w.acwr !== null ? `ACWR ${w.acwr}` : "ACWR n/a",
+      w.wowChangePct !== null ? `week-over-week ${w.wowChangePct > 0 ? "+" : ""}${w.wowChangePct}%` : null,
+      `| MILEAGE: ${directionLabel(w.mileageFlag.direction)} (${w.mileageFlag.severity}) — ${w.mileageFlag.reason}`,
+      `| PACE: ${directionLabel(w.paceFlag.direction)} (${w.paceFlag.severity}) — ${w.paceFlag.reason}`,
+    ]
+      .filter(Boolean)
+      .join(" ")
+  })
+
+  const baselineLine = [
+    baseline.targetRace ? `Target race: ${baseline.targetRace}.` : null,
+    baseline.weeklyMileageGoalMiles ? `Weekly mileage goal: ${baseline.weeklyMileageGoalMiles} mi.` : null,
+  ]
+    .filter(Boolean)
+    .join(" ")
+
+  return { context: lines.join("\n"), baselineLine, current: recent[recent.length - 1] }
+}
+
+export type GenerateLogResult =
+  | { ok: true; markdown: string; weekStart: string; source: "ai" | "algorithm"; notice?: string }
+  | { ok: false; error: string }
+
+/** Generates and stores the training log for one owner. Session-independent so cron can call it. */
+export async function generateLogForOwner(ownerId: string): Promise<GenerateLogResult> {
+  const { weeks, baseline, activityCount } = await getAnalysis(ownerId)
+  if (activityCount === 0 || weeks.length === 0) {
+    return { ok: false, error: "No activities to analyze yet. Load sample data or import runs first." }
+  }
+
+  const { context, baselineLine, current } = buildContext(weeks, baseline)
+
+  const system = [
+    "You are a running coach writing a training log for an athlete.",
+    "You are given per-week statistics and pre-computed cut-back / ramp-up flags derived from an acute:chronic workload ratio (ACWR) and pace/heart-rate trends.",
+    "The numbers and flag directions are the source of truth: NEVER contradict them, recompute them, or invent values not present.",
+    "Write in Markdown. Be specific, encouraging but honest, and concise.",
+    "The app already displays the current week's metric tiles (time, sessions, ACWR, week-over-week change, load status, and the adjustment call) and a full week-by-week table elsewhere on the page.",
+    "Do NOT restate those: no per-week recap list and no 'this week's call' metric summary. Focus on narrative and guidance the tiles can't convey.",
+    "Structure the output exactly as:",
+    "## The Story So Far  (2-3 short paragraphs summarizing how the block has progressed and what the trend means)",
+    "## Recommendations For Next Week  (3-5 concrete, actionable bullets on pace and mileage)",
+    "All distances are in miles and all paces are per mile. Never use kilometers.",
+  ].join("\n")
+
+  const prompt = [
+    baselineLine ? `Athlete context: ${baselineLine}` : "",
+    `Most recent week starts ${current.weekStart}.`,
+    "Weekly data (oldest to newest):",
+    context,
+  ]
+    .filter(Boolean)
+    .join("\n\n")
+
+  // The deterministic builder is the source of truth and the guaranteed fallback.
+  let markdown = buildRunningLog(weeks, baseline)
+  let source: "ai" | "algorithm" = "algorithm"
+  let notice: string | undefined
+  try {
+    const { text } = await generateText({ model: MODEL, system, prompt })
+    if (text.trim()) {
+      markdown = text
+      source = "ai"
+    }
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err)
+    console.log("[v0] AI narration unavailable, using algorithm-generated log:", message)
+    notice = /credit card|quota|billing|402|403/i.test(message)
+      ? "AI narration is unavailable (AI Gateway needs billing enabled), so this log was generated directly from the training algorithm."
+      : "AI narration was unavailable, so this log was generated directly from the training algorithm."
+  }
+
+  const summary = {
+    weeks: weeks.length,
+    latestWeek: current.weekStart,
+    latestAcwr: current.acwr,
+    mileageDirection: current.mileageFlag.direction,
+    paceDirection: current.paceFlag.direction,
+    source,
+  }
+
+  const weekStart = current.weekStart
+  await db
+    .insert(logEntries)
+    .values({ ownerId, weekStart, generatedMarkdown: markdown, summaryJson: summary })
+    .onConflictDoUpdate({
+      target: [logEntries.ownerId, logEntries.weekStart],
+      set: { generatedMarkdown: markdown, summaryJson: summary },
+    })
+
+  return { ok: true, markdown, weekStart, source, notice }
+}
+
+export async function getLatestLogForOwner(ownerId: string) {
+  const rows = await db
+    .select()
+    .from(logEntries)
+    .where(eq(logEntries.ownerId, ownerId))
+    .orderBy(desc(logEntries.weekStart))
+    .limit(1)
+  return rows[0] ?? null
+}

@@ -3,7 +3,8 @@
 import { db } from "@/lib/db"
 import { activities, settings, settingsBackup, stravaConnection } from "@/lib/db/schema"
 import { getOwnerId } from "@/lib/owner"
-import { getRedirectUri, stravaConfigured, syncStravaActivities } from "@/lib/strava"
+import { AUTO_SYNC_STALE_MS, getLastSyncAt, refreshOwner } from "@/lib/refresh"
+import { getRedirectUri, stravaConfigured } from "@/lib/strava"
 import type { StravaStatus } from "@/lib/types"
 import { and, eq } from "drizzle-orm"
 import { revalidatePath } from "next/cache"
@@ -33,12 +34,36 @@ export async function getStravaStatus(): Promise<StravaStatus> {
 export async function syncStrava() {
   try {
     const ownerId = await getOwnerId()
-    const { imported } = await syncStravaActivities(ownerId)
+    const { imported } = await refreshOwner(ownerId)
     revalidatePath("/")
     return { ok: true as const, imported }
   } catch (err) {
     console.log("[v0] strava sync error:", err instanceof Error ? err.message : String(err))
     return { ok: false as const, error: "Strava sync failed. Reconnect and try again." }
+  }
+}
+
+/**
+ * Called when the dashboard opens. Re-syncs Strava and regenerates the
+ * training log only if the last sync is stale, so repeated opens stay cheap.
+ */
+export async function autoRefresh(): Promise<{ refreshed: boolean; changed: boolean }> {
+  const ownerId = await getOwnerId()
+  if (!stravaConfigured()) return { refreshed: false, changed: false }
+
+  const lastSyncAt = await getLastSyncAt(ownerId)
+  if (lastSyncAt === undefined) return { refreshed: false, changed: false }
+  if (lastSyncAt && Date.now() - lastSyncAt.getTime() < AUTO_SYNC_STALE_MS) {
+    return { refreshed: false, changed: false }
+  }
+
+  try {
+    const result = await refreshOwner(ownerId)
+    revalidatePath("/")
+    return { refreshed: true, changed: result.dataChanged || result.logUpdated }
+  } catch (err) {
+    console.log("[v0] auto refresh error:", err instanceof Error ? err.message : String(err))
+    return { refreshed: false, changed: false }
   }
 }
 

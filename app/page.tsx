@@ -14,6 +14,7 @@ import { ThisWeeksCall, WeeklyTimeline } from "@/components/week-summary"
 import { DisciplineSummary } from "@/components/discipline-summary"
 import { LogPanel } from "@/components/log-panel"
 import { AccountMenu } from "@/components/account-menu"
+import { AutoRefresh } from "@/components/auto-refresh"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Footprints, PersonStanding, Dumbbell, Flower2, Settings } from "lucide-react"
 import Image from "next/image"
@@ -73,7 +74,10 @@ export default async function DashboardPage() {
               Pace &amp; Load Agent
             </span>
           </div>
-          <AccountMenu email={session.user.email} name={session.user.name} />
+          <div className="flex items-center gap-3">
+            <AutoRefresh enabled={strava.configured && strava.connected} />
+            <AccountMenu email={session.user.email} name={session.user.name} />
+          </div>
         </div>
         <div className="flex flex-col gap-2">
           <h1 className="text-2xl font-semibold tracking-tight text-balance md:text-3xl">

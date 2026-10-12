@@ -1,5 +1,6 @@
 import { auth } from "@/lib/auth"
-import { exchangeCodeForToken, storeConnection, syncStravaActivities } from "@/lib/strava"
+import { refreshOwner } from "@/lib/refresh"
+import { exchangeCodeForToken, storeConnection } from "@/lib/strava"
 import { headers } from "next/headers"
 import { NextResponse, type NextRequest } from "next/server"
 
@@ -22,7 +23,7 @@ export async function GET(request: NextRequest) {
   try {
     const token = await exchangeCodeForToken(code)
     await storeConnection(ownerId, token)
-    await syncStravaActivities(ownerId)
+    await refreshOwner(ownerId)
     return NextResponse.redirect(`${origin}/?strava=connected`)
   } catch (err) {
     console.log("[v0] strava callback error:", err instanceof Error ? err.message : String(err))
