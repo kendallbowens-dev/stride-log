@@ -9,6 +9,13 @@ import { generateText } from "ai"
 import { desc, eq } from "drizzle-orm"
 
 const MODEL = "openai/gpt-5.2"
+const MAX_SENTENCES = 3
+
+// Hard cap so coach messages never exceed the limit even if the model ignores the prompt.
+function limitSentences(text: string, max = MAX_SENTENCES) {
+  const sentences = text.trim().replace(/\s+/g, " ").match(/[^.!?]+(?:[.!?]+["')\]]*|$)/g) ?? []
+  return sentences.slice(0, max).join("").trim()
+}
 
 function buildContext(
   weeks: WeekStats[],
@@ -82,7 +89,7 @@ export async function replyToCoachForOwner(
     "You are the athlete's running coach, chatting with them by text about their training.",
     "You are given per-week statistics and pre-computed cut-back / ramp-up flags derived from an acute:chronic workload ratio (ACWR) and pace/heart-rate trends.",
     "The numbers and flag directions are the source of truth: NEVER contradict them or invent values not present. If the data can't answer a question, say so plainly.",
-    "Reply in second person like a friendly coach texting back: warm, plain, honest. Keep it SHORT: 1-3 sentences, under 60 words.",
+    "Reply in second person like a friendly coach texting back: warm, plain, honest. Keep it SHORT: never more than 3 sentences, under 60 words.",
     "No headings, bullet lists, or tables. Avoid jargon like 'ACWR' unless explaining it in plain words.",
     "You are not a doctor: for pain, injury, or medical questions, give general guidance and suggest seeing a professional.",
     "All distances are in miles and all paces are per mile. Never use kilometers.",
@@ -98,7 +105,7 @@ export async function replyToCoachForOwner(
 
   try {
     const { text } = await generateText({ model: MODEL, system, messages })
-    const reply = text.trim()
+    const reply = limitSentences(text)
     if (!reply) return { ok: false, error: "Your coach didn't have a reply. Try asking another way." }
     return { ok: true, reply }
   } catch (err) {
@@ -125,7 +132,7 @@ export async function generateLogForOwner(ownerId: string): Promise<GenerateLogR
     "You are given per-week statistics and pre-computed cut-back / ramp-up flags derived from an acute:chronic workload ratio (ACWR) and pace/heart-rate trends.",
     "The numbers and flag directions are the source of truth: NEVER contradict them, recompute them, or invent values not present.",
     "Talk directly to the athlete in second person, like a friendly coach texting them. Warm, plain, honest.",
-    "Keep it SHORT: 2-4 sentences total, under 70 words. One sentence on how things are going, then the single most important thing to do next week.",
+    "Keep it SHORT: never more than 3 sentences total, under 60 words. One sentence on how things are going, then the single most important thing to do next week.",
     "No headings, no bullet lists, no tables, no jargon like 'ACWR' unless explaining it in plain words. Don't recite stats the athlete can already see; mention at most one number.",
     "All distances are in miles and all paces are per mile. Never use kilometers.",
   ].join("\n")
@@ -140,13 +147,13 @@ export async function generateLogForOwner(ownerId: string): Promise<GenerateLogR
     .join("\n\n")
 
   // The deterministic builder is the source of truth and the guaranteed fallback.
-  let markdown = buildCoachNote(current)
+  let markdown = limitSentences(buildCoachNote(current))
   let source: "ai" | "algorithm" = "algorithm"
   let notice: string | undefined
   try {
     const { text } = await generateText({ model: MODEL, system, prompt })
     if (text.trim()) {
-      markdown = text
+      markdown = limitSentences(text)
       source = "ai"
     }
   } catch (err) {
