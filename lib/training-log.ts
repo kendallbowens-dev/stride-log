@@ -5,7 +5,6 @@ import { logEntries } from "@/lib/db/schema"
 import { getAnalysis } from "@/lib/get-analysis"
 import type { WeekStats } from "@/lib/training/algorithm"
 import { directionLabel, formatPace } from "@/lib/format"
-import { buildRunningLog } from "@/lib/log-builder"
 import { generateText } from "ai"
 import { desc, eq } from "drizzle-orm"
 
@@ -41,6 +40,24 @@ function buildContext(
   return { context: lines.join("\n"), baselineLine, current: recent[recent.length - 1] }
 }
 
+const NEXT_WEEK_ADVICE: Record<WeekStats["mileageFlag"]["direction"], string> = {
+  rampup: "you've got room to add a little more mileage next week, so nudge it up gently.",
+  cutback: "your body could use a lighter week, so pull the mileage back a bit and keep the easy runs truly easy.",
+  hold: "keep next week about the same and let the consistency do the work.",
+}
+
+/** Short, conversational fallback used when AI narration is unavailable. */
+function buildCoachNote(current: WeekStats): string {
+  const runs = current.sessions === 1 ? "1 run" : `${current.sessions} runs`
+  const opener = `Nice work this week: ${current.distanceMiles} mi across ${runs}.`
+  const advice = NEXT_WEEK_ADVICE[current.mileageFlag.direction]
+  const pace =
+    current.paceFlag.direction === "cutback"
+      ? " Your pace is running a bit hot for the effort, so ease off on the fast days."
+      : ""
+  return `${opener} Looking at your load, ${advice}${pace}`
+}
+
 export type GenerateLogResult =
   | { ok: true; markdown: string; weekStart: string; source: "ai" | "algorithm"; notice?: string }
   | { ok: false; error: string }
@@ -55,15 +72,12 @@ export async function generateLogForOwner(ownerId: string): Promise<GenerateLogR
   const { context, baselineLine, current } = buildContext(weeks, baseline)
 
   const system = [
-    "You are a running coach writing a training log for an athlete.",
+    "You are the athlete's running coach, sending them a quick message about their training.",
     "You are given per-week statistics and pre-computed cut-back / ramp-up flags derived from an acute:chronic workload ratio (ACWR) and pace/heart-rate trends.",
     "The numbers and flag directions are the source of truth: NEVER contradict them, recompute them, or invent values not present.",
-    "Write in Markdown. Be specific, encouraging but honest, and concise.",
-    "The app already displays the current week's metric tiles (time, sessions, ACWR, week-over-week change, load status, and the adjustment call) and a full week-by-week table elsewhere on the page.",
-    "Do NOT restate those: no per-week recap list and no 'this week's call' metric summary. Focus on narrative and guidance the tiles can't convey.",
-    "Structure the output exactly as:",
-    "## The Story So Far  (2-3 short paragraphs summarizing how the block has progressed and what the trend means)",
-    "## Recommendations For Next Week  (3-5 concrete, actionable bullets on pace and mileage)",
+    "Talk directly to the athlete in second person, like a friendly coach texting them. Warm, plain, honest.",
+    "Keep it SHORT: 2-4 sentences total, under 70 words. One sentence on how things are going, then the single most important thing to do next week.",
+    "No headings, no bullet lists, no tables, no jargon like 'ACWR' unless explaining it in plain words. Don't recite stats the athlete can already see; mention at most one number.",
     "All distances are in miles and all paces are per mile. Never use kilometers.",
   ].join("\n")
 
@@ -77,7 +91,7 @@ export async function generateLogForOwner(ownerId: string): Promise<GenerateLogR
     .join("\n\n")
 
   // The deterministic builder is the source of truth and the guaranteed fallback.
-  let markdown = buildRunningLog(weeks, baseline)
+  let markdown = buildCoachNote(current)
   let source: "ai" | "algorithm" = "algorithm"
   let notice: string | undefined
   try {

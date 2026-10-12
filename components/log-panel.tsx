@@ -4,7 +4,6 @@ import { useState, useTransition } from "react"
 import ReactMarkdown from "react-markdown"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Separator } from "@/components/ui/separator"
 import { generateRunningLog } from "@/app/actions/log"
 import { toast } from "sonner"
 
@@ -61,9 +60,9 @@ export function LogPanel({ initialMarkdown, hasActivities }: LogPanelProps) {
     <Card>
       <CardHeader>
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <CardTitle className="text-base">Training log agent</CardTitle>
-          <Button variant="outline" size="sm" onClick={handleGenerate} disabled={isGenerating || !hasActivities}>
-            {isGenerating ? "Analyzing..." : markdown ? "Regenerate" : "Generate log"}
+          <CardTitle className="text-base">From your coach</CardTitle>
+          <Button variant="ghost" size="sm" onClick={handleGenerate} disabled={isGenerating || !hasActivities}>
+            {isGenerating ? "Thinking..." : markdown ? "New take" : "Check in"}
           </Button>
         </div>
       </CardHeader>
@@ -71,20 +70,19 @@ export function LogPanel({ initialMarkdown, hasActivities }: LogPanelProps) {
         {markdown ? (
           <>
             {notice ? (
-              <p className="mb-4 rounded-md border border-warning/30 bg-warning/10 px-3 py-2 text-xs text-warning">
+              <p className="mb-3 rounded-md border border-warning/30 bg-warning/10 px-3 py-2 text-xs text-warning">
                 {notice}
               </p>
             ) : null}
-            <Separator className="mb-4" />
-            <article className="prose-log max-w-none">
+            <div className="rounded-2xl rounded-tl-sm bg-secondary px-4 py-3 text-pretty text-sm leading-relaxed text-secondary-foreground [&_p+p]:mt-2">
               <ReactMarkdown>{stripRedundantSections(markdown)}</ReactMarkdown>
-            </article>
+            </div>
           </>
         ) : (
-          <p className="py-8 text-center text-sm text-muted-foreground">
+          <p className="py-6 text-center text-sm text-muted-foreground">
             {hasActivities
-              ? "Generate a narrative log with cut-back / ramp-up guidance based on your training data."
-              : "Load some activities first, then generate your log."}
+              ? "Check in for a quick note on how your training is going."
+              : "Load some activities first, then check in with your coach."}
           </p>
         )}
       </CardContent>
